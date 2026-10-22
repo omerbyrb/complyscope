@@ -1,0 +1,20 @@
+controls:
+  - id: MINI-SC-01
+    theme: secure_configuration
+    title: Unnecessary services are disabled
+    assessment: hybrid
+    evidence:
+      - source: redscope
+        check: tls.weak_protocol
+      - source: questionnaire
+        question: MINI-SC-Q1
+    crosswalk:
+      iso27001-2022: [A.8.9]
+
+  - id: MINI-SC-02
+    theme: secure_configuration
+    title: Default passwords are changed
+    assessment: questionnaire
+    evidence:
+      - source: questionnaire
+        question: MINI-SC-Q2

@@ -1,0 +1,9 @@
+controls:
+  - id: MINI-FW-01
+    theme: firewalls
+    title: Boundary firewall blocks unsolicited inbound connections
+    assessment: automated
+    evidence:
+      - source: redscope
+        check: ports.unexpected_open
+        fail_if: present

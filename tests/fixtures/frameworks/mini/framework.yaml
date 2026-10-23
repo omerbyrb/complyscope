@@ -1,0 +1,9 @@
+# A tiny, fictional framework used only by tests.
+id: mini
+name: Mini Test Framework
+version: "1.0"
+publisher: complyscope tests
+source_url: https://example.org/mini
+themes:
+  - firewalls
+  - secure_configuration

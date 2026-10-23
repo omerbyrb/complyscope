@@ -24,6 +24,8 @@ classifiers = [
 ]
 dependencies = [
     "click>=8.2",
+    "pydantic>=2.7",
+    "pyyaml>=6.0",
 ]
 
 [project.optional-dependencies]

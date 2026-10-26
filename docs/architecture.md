@@ -17,7 +17,7 @@ against that evidence, record what fails as a **risk**, and report the result.
                                    ▼
                          Evidence  (one normalised model)
                                    │
-   frameworks/*.yaml ──────▶  MAPPING ENGINE
+   frameworks/**/*.yaml ───▶  MAPPING ENGINE
    (controls as data)              │
                                    ▼
             ControlResult: pass / fail / partial / not_assessed
@@ -48,7 +48,7 @@ against that evidence, record what fails as a **risk**, and report the result.
 | `src/complyscope/reporting/` | HTML/PDF report rendering |
 | `src/complyscope/ai/` | LLM-assisted policy gap analysis with cited rationale |
 | `src/complyscope/api/` | FastAPI service for the dashboard |
-| `frameworks/` | Control catalogues as YAML data (Cyber Essentials, ISO 27001, NIST CSF) |
+| `src/complyscope/frameworks/` | Control catalogues as YAML data, shipped in the package ([ADR-0006](decisions/0006-ship-catalogues-inside-the-package.md)) |
 | `examples/` | Fictional organisation data and sample reports |
 | `docs/decisions/` | Architecture Decision Records |
 

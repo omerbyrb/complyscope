@@ -1,0 +1,71 @@
+# Aim: devices are configured to reduce vulnerabilities and run only what their role needs.
+controls:
+  - id: CE-SC-01
+    theme: secure_configuration
+    title: Unnecessary user accounts are removed or disabled
+    description: >-
+      Guest accounts, unused administrative accounts and other accounts that are not
+      needed are regularly removed or disabled.
+    assessment: questionnaire
+    crosswalk:
+      iso27001-2022: [A.5.18, A.8.9]
+      nist-csf-2.0: [PR.AA-05]
+
+  - id: CE-SC-02
+    theme: secure_configuration
+    title: Default and guessable passwords are changed
+    description: >-
+      Any default or easily guessed account password is replaced in line with the
+      password requirements of the user access control theme.
+    assessment: questionnaire
+    crosswalk:
+      iso27001-2022: [A.5.17]
+      nist-csf-2.0: [PR.AA-01]
+
+  - id: CE-SC-03
+    theme: secure_configuration
+    title: Unnecessary software and network services are removed or disabled
+    description: >-
+      Applications, system utilities and network services that a device does not need
+      for its role are uninstalled or switched off.
+    assessment: hybrid
+    # Candidate evidence: redscope service enumeration, weak TLS protocols, banner leaks.
+    crosswalk:
+      iso27001-2022: [A.8.9, A.8.19]
+      nist-csf-2.0: [PR.PS-01]
+
+  - id: CE-SC-04
+    theme: secure_configuration
+    title: Auto-run is disabled
+    description: >-
+      Features that execute files without the user's authorisation, for example when
+      they are downloaded or inserted on removable media, are turned off.
+    assessment: questionnaire
+    crosswalk:
+      iso27001-2022: [A.8.9]
+      nist-csf-2.0: [PR.PS-05]
+
+  - id: CE-SC-05
+    theme: secure_configuration
+    title: Users are authenticated before accessing organisational data or services
+    description: >-
+      No organisational data or service is available to a user who has not first
+      proved their identity.
+    assessment: questionnaire
+    crosswalk:
+      iso27001-2022: [A.8.5]
+      nist-csf-2.0: [PR.AA-03]
+
+  - id: CE-SC-06
+    theme: secure_configuration
+    title: Device unlocking is protected against guessing
+    description: >-
+      Devices that need the user to be physically present require a biometric, password
+      or PIN to unlock. Guessing is limited by throttling (no more than 10 attempts in
+      5 minutes) or by locking after at most 10 failed attempts, or by the vendor
+      default where neither can be configured. A password or PIN used only to unlock a
+      device is at least 6 characters long.
+    assessment: questionnaire
+    crosswalk:
+      iso27001-2022: [A.8.1, A.8.5]
+      nist-csf-2.0: [PR.AA-03]

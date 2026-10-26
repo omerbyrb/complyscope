@@ -1,0 +1,47 @@
+# Aim: devices and software are not vulnerable to known issues that already have fixes.
+controls:
+  - id: CE-SU-01
+    theme: security_update_management
+    title: All in-scope software is licensed and supported
+    description: >-
+      The organisation has the right to use every piece of software, and its vendor
+      still provides vulnerability fixes and has published an end-of-support date.
+    assessment: hybrid
+    # Candidate evidence: redscope banner grabbing with end-of-life version detection.
+    crosswalk:
+      iso27001-2022: [A.8.8]
+      nist-csf-2.0: [PR.PS-02]
+
+  - id: CE-SU-02
+    theme: security_update_management
+    title: Unsupported software is removed or isolated
+    description: >-
+      Software that reaches end of support is uninstalled, or the devices running it
+      are moved into a separate sub-set with no traffic to or from the internet.
+    assessment: hybrid
+    # Candidate evidence: redscope end-of-life version detection.
+    crosswalk:
+      iso27001-2022: [A.8.8]
+      nist-csf-2.0: [PR.PS-02]
+
+  - id: CE-SU-03
+    theme: security_update_management
+    title: Automatic updates are enabled where possible
+    assessment: questionnaire
+    crosswalk:
+      iso27001-2022: [A.8.8]
+      nist-csf-2.0: [PR.PS-02]
+
+  - id: CE-SU-04
+    theme: security_update_management
+    title: Critical and high-risk updates are applied within 14 days
+    description: >-
+      Updates are installed within 14 days of release when the vendor rates them
+      critical or high risk, when they fix vulnerabilities with a CVSS v3 base score of
+      7 or more, or when the vendor gives no severity at all. A bundled update that
+      fixes any such issue counts as critical.
+    assessment: hybrid
+    # Candidate evidence: redscope CVE lookup against detected service versions.
+    crosswalk:
+      iso27001-2022: [A.8.8]
+      nist-csf-2.0: [ID.RA-01, PR.PS-02]

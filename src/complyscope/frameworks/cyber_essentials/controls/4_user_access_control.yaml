@@ -1,0 +1,102 @@
+# Aim: accounts belong only to authorised people and give only the access their role needs.
+# Accounts used by third parties (suppliers, MSPs) are in scope too.
+controls:
+  - id: CE-UA-01
+    theme: user_access_control
+    title: User accounts are created through an approval process
+    assessment: questionnaire
+    crosswalk:
+      iso27001-2022: [A.5.16, A.5.18]
+      nist-csf-2.0: [PR.AA-01]
+
+  - id: CE-UA-02
+    theme: user_access_control
+    title: Users authenticate with unique credentials
+    description: >-
+      Each person has their own credentials and proves their identity before getting
+      access to applications or devices. Shared accounts are not used.
+    assessment: questionnaire
+    crosswalk:
+      iso27001-2022: [A.5.16, A.8.5]
+      nist-csf-2.0: [PR.AA-01, PR.AA-03]
+
+  - id: CE-UA-03
+    theme: user_access_control
+    title: Accounts that are no longer needed are removed or disabled
+    description: >-
+      Accounts are removed or disabled when a person leaves or after a defined period of
+      inactivity.
+    assessment: questionnaire
+    crosswalk:
+      iso27001-2022: [A.5.18]
+      nist-csf-2.0: [PR.AA-05]
+
+  - id: CE-UA-04
+    theme: user_access_control
+    title: MFA is used wherever available, and always for cloud services
+    description: >-
+      Multi-factor authentication is enabled on every service that supports it.
+      Authentication to cloud services must always use MFA. Passkeys and other FIDO2
+      authenticators count as MFA. The password element of MFA is at least 8
+      characters with no maximum length.
+    assessment: questionnaire
+    crosswalk:
+      iso27001-2022: [A.8.5]
+      nist-csf-2.0: [PR.AA-03]
+
+  - id: CE-UA-05
+    theme: user_access_control
+    title: Administrative work uses separate, dedicated accounts
+    description: >-
+      Administrators use a separate account for administrative tasks only, never for
+      email, web browsing or other everyday activity.
+    assessment: questionnaire
+    crosswalk:
+      iso27001-2022: [A.8.2]
+      nist-csf-2.0: [PR.AA-05]
+
+  - id: CE-UA-06
+    theme: user_access_control
+    title: Special access privileges are removed when no longer required
+    description: >-
+      Elevated privileges are withdrawn promptly, for example when someone changes role.
+    assessment: questionnaire
+    crosswalk:
+      iso27001-2022: [A.8.2, A.5.18]
+      nist-csf-2.0: [PR.AA-05]
+
+  - id: CE-UA-07
+    theme: user_access_control
+    title: Password logins are protected against brute-force guessing
+    description: >-
+      At least one of: MFA; throttling that allows no more than 10 attempts in
+      5 minutes; or locking after at most 10 failed attempts.
+    assessment: questionnaire
+    crosswalk:
+      iso27001-2022: [A.8.5]
+      nist-csf-2.0: [PR.AA-03]
+
+  - id: CE-UA-08
+    theme: user_access_control
+    title: Password quality is enforced technically
+    description: >-
+      At least one of: MFA; a minimum length of 12 characters; or a minimum length of
+      8 characters combined with automatic blocking of common passwords. No maximum
+      length is imposed.
+    assessment: questionnaire
+    crosswalk:
+      iso27001-2022: [A.5.17]
+      nist-csf-2.0: [PR.AA-01]
+
+  - id: CE-UA-09
+    theme: user_access_control
+    title: Users are supported to choose and protect unique passwords
+    description: >-
+      Staff are taught to avoid common or reused passwords and encouraged to use longer
+      passphrases such as three random words. Secure password storage such as a password
+      manager is provided. Regular forced expiry and complexity rules are not imposed.
+      Passwords are changed promptly when compromise is known or suspected.
+    assessment: questionnaire
+    crosswalk:
+      iso27001-2022: [A.5.17, A.6.3]
+      nist-csf-2.0: [PR.AT-01]

@@ -39,7 +39,7 @@ See [docs/architecture.md](docs/architecture.md) for the full design and
 
 | Framework | Status |
 |---|---|
-| Cyber Essentials | 🚧 In progress |
+| Cyber Essentials (Requirements for IT Infrastructure v3.3) | ✅ Control catalogue (27 controls) · 🚧 evidence mapping |
 | ISO/IEC 27001:2022 Annex A | Planned (week 7) |
 | NIST CSF 2.0 | Planned (week 7) |
 
@@ -51,6 +51,7 @@ cd complyscope
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
 complyscope --help
+complyscope controls list --theme user_access_control
 pytest
 ```
 

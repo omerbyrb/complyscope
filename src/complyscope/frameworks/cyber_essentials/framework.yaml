@@ -1,0 +1,17 @@
+# Cyber Essentials technical controls, summarised in complyscope's own words.
+# Authoritative text: NCSC "Cyber Essentials: Requirements for IT Infrastructure v3.3"
+# (April 2026). Always check the source document before relying on a summary here.
+#
+# Crosswalk entries to ISO/IEC 27001:2022 Annex A and NIST CSF 2.0 are indicative and
+# get a full review when those frameworks are added (week 7).
+id: cyber-essentials
+name: Cyber Essentials
+version: "3.3"
+publisher: UK National Cyber Security Centre (NCSC)
+source_url: https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf
+themes:
+  - firewalls
+  - secure_configuration
+  - security_update_management
+  - user_access_control
+  - malware_protection

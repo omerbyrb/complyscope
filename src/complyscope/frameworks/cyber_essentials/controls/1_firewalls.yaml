@@ -1,0 +1,62 @@
+# Aim: only secure, necessary network services are reachable from the internet.
+# Evidence rules are added once redscope exposes stable check ids (week 2).
+controls:
+  - id: CE-FW-01
+    theme: firewalls
+    title: Every in-scope device is protected by a correctly configured firewall
+    description: >-
+      Each device sits behind a boundary firewall (or a device with firewall
+      functionality) or runs its own software firewall. Devices used on networks the
+      organisation does not control, such as public Wi-Fi, must use a software firewall.
+    assessment: hybrid
+    # Candidate evidence: redscope port scan of the external boundary.
+    crosswalk:
+      iso27001-2022: [A.8.20]
+      nist-csf-2.0: [PR.IR-01]
+
+  - id: CE-FW-02
+    theme: firewalls
+    title: Default firewall administrator passwords are replaced or remote admin is disabled
+    description: >-
+      Factory-default administrative passwords on firewalls and routers are changed to
+      strong, unique passwords, or remote administrative access is switched off entirely.
+    assessment: questionnaire
+    crosswalk:
+      iso27001-2022: [A.5.17, A.8.9]
+      nist-csf-2.0: [PR.AA-01]
+
+  - id: CE-FW-03
+    theme: firewalls
+    title: Firewall admin interfaces are not exposed to the internet without strong protection
+    description: >-
+      The management interface is not reachable from the internet unless there is a
+      documented business need, and then only when protected by MFA or by an IP allow
+      list of a few trusted addresses combined with well-managed passwords.
+    assessment: hybrid
+    # Candidate evidence: redscope service enumeration finding exposed admin panels.
+    crosswalk:
+      iso27001-2022: [A.8.20, A.8.5]
+      nist-csf-2.0: [PR.IR-01, PR.AA-03]
+
+  - id: CE-FW-04
+    theme: firewalls
+    title: Unauthenticated inbound connections are blocked by default
+    description: >-
+      The default firewall policy denies inbound traffic; only explicitly allowed
+      services accept connections.
+    assessment: hybrid
+    # Candidate evidence: redscope port scan showing unexpected open ports.
+    crosswalk:
+      iso27001-2022: [A.8.20]
+      nist-csf-2.0: [PR.IR-01]
+
+  - id: CE-FW-05
+    theme: firewalls
+    title: Inbound firewall rules are approved, documented and pruned
+    description: >-
+      An authorised person approves every inbound rule and records its business need.
+      Rules that are no longer needed are removed or disabled promptly.
+    assessment: questionnaire
+    crosswalk:
+      iso27001-2022: [A.8.20, A.8.32]
+      nist-csf-2.0: [PR.PS-01]

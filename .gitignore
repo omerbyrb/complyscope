@@ -25,6 +25,11 @@ site/
 # Assessment output (may contain real scan data)
 output/
 reports/
+evidence*.json
+
+# Real scopes name client systems; only the example is tracked
+/scope.yaml
+/scope.*.yaml
 
 # OS / editors
 .DS_Store

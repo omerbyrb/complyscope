@@ -1,0 +1,21 @@
+# Example assessment scope. complyscope only runs technical checks against the
+# hosts listed here, and only when the authorisation block is completed.
+#
+# Copy this file, replace the fictional values, and keep the real one out of git
+# if it names client systems.
+organisation: Acme Ltd (fictional)
+
+authorisation:
+  # Set to true only if you own these systems or hold written permission to test them.
+  confirmed: true
+  confirmed_by: Jane Doe, IT Manager (fictional)
+  confirmed_on: 2026-11-01
+  reference: Example engagement letter EL-0001
+
+targets:
+  - host: localhost
+    description: Local test VM
+  - host: 127.0.0.1
+    description: Same machine by IP
+  - host: app.example.test
+    description: Fictional web app (.test is a reserved, non-routable TLD)

@@ -3,21 +3,15 @@
 from enum import StrEnum
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
+from pydantic import Field, StringConstraints, model_validator
+
+from complyscope.models.base import NonEmptyStr, StrictModel
 
 # Framework ids are slugs, e.g. "cyber-essentials", "iso27001-2022", "nist-csf-2.0".
 FrameworkId = Annotated[str, StringConstraints(pattern=r"^[a-z0-9]+(?:[.-][a-z0-9]+)*$")]
 
 # Control ids follow each publisher's style: "CE-FW-01", "A.8.9", "PR.PS-01".
 ControlId = Annotated[str, StringConstraints(pattern=r"^[A-Za-z0-9]+(?:[.-][A-Za-z0-9]+)*$")]
-
-NonEmptyStr = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
-
-
-class _StrictModel(BaseModel):
-    # Reject unknown keys so a typo in YAML (e.g. "asessment") fails loudly
-    # instead of being silently ignored.
-    model_config = ConfigDict(extra="forbid", frozen=True)
 
 
 class AssessmentMethod(StrEnum):
@@ -26,7 +20,7 @@ class AssessmentMethod(StrEnum):
     HYBRID = "hybrid"
 
 
-class RedscopeRule(_StrictModel):
+class RedscopeRule(StrictModel):
     """Evidence from a redscope technical check, identified by its stable check_id."""
 
     source: Literal["redscope"]
@@ -34,7 +28,7 @@ class RedscopeRule(_StrictModel):
     fail_if: Literal["present", "absent"] = "present"
 
 
-class QuestionnaireRule(_StrictModel):
+class QuestionnaireRule(StrictModel):
     """Evidence from an answer in the questionnaire module."""
 
     source: Literal["questionnaire"]
@@ -50,7 +44,7 @@ _ALLOWED_SOURCES = {
 }
 
 
-class Control(_StrictModel):
+class Control(StrictModel):
     id: ControlId
     theme: NonEmptyStr
     title: NonEmptyStr
@@ -73,7 +67,7 @@ class Control(_StrictModel):
         return self
 
 
-class Framework(_StrictModel):
+class Framework(StrictModel):
     id: FrameworkId
     name: NonEmptyStr
     version: NonEmptyStr

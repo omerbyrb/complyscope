@@ -7,7 +7,10 @@ controls:
       The organisation has the right to use every piece of software, and its vendor
       still provides vulnerability fixes and has published an end-of-support date.
     assessment: hybrid
-    # Candidate evidence: redscope banner grabbing with end-of-life version detection.
+    # A service banner showing end-of-life software.
+    evidence:
+      - source: redscope
+        check: banner.eol_software
     crosswalk:
       iso27001-2022: [A.8.8]
       nist-csf-2.0: [PR.PS-02]
@@ -19,7 +22,10 @@ controls:
       Software that reaches end of support is uninstalled, or the devices running it
       are moved into a separate sub-set with no traffic to or from the internet.
     assessment: hybrid
-    # Candidate evidence: redscope end-of-life version detection.
+    # End-of-life software still reachable from the internet.
+    evidence:
+      - source: redscope
+        check: banner.eol_software
     crosswalk:
       iso27001-2022: [A.8.8]
       nist-csf-2.0: [PR.PS-02]
@@ -41,7 +47,11 @@ controls:
       7 or more, or when the vendor gives no severity at all. A bundled update that
       fixes any such issue counts as critical.
     assessment: hybrid
-    # Candidate evidence: redscope CVE lookup against detected service versions.
+    # A known CVE in a detected version suggests a missed update. The 14-day window itself
+    # needs patch records, which the questionnaire will ask for (week 5).
+    evidence:
+      - source: redscope
+        check: cvelookup.known_vulnerability
     crosswalk:
       iso27001-2022: [A.8.8]
       nist-csf-2.0: [ID.RA-01, PR.PS-02]

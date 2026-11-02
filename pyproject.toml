@@ -29,6 +29,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# Technical evidence collection; pinned to a reviewed redscope release (ADR-0007).
+scan = [
+    "redscope @ git+https://github.com/omerbyrb/redscope@v2.0.0",
+]
 dev = [
     "pytest>=8.0",
     "pytest-cov>=5.0",
@@ -41,6 +45,10 @@ complyscope = "complyscope.cli:cli"
 [project.urls]
 Repository = "https://github.com/omerbyrb/complyscope"
 Issues = "https://github.com/omerbyrb/complyscope/issues"
+
+[tool.hatch.metadata]
+# Needed for the git-pinned redscope dependency in the scan extra.
+allow-direct-references = true
 
 [tool.hatch.version]
 path = "src/complyscope/__init__.py"

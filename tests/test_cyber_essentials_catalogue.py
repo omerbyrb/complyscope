@@ -2,6 +2,7 @@
 
 import pytest
 
+from complyscope.collectors.redscope_adapter import MODULE_CHECKS
 from complyscope.controls import FrameworkLoadError, builtin_framework_dirs, load_builtin_framework
 
 THEME_PREFIX = {
@@ -49,3 +50,17 @@ def test_every_control_has_a_crosswalk_to_iso_and_nist(ce):
 def test_unknown_builtin_framework_lists_available_ones():
     with pytest.raises(FrameworkLoadError, match="available: cyber-essentials"):
         load_builtin_framework("pci-dss")
+
+
+def test_every_hybrid_control_has_redscope_evidence(ce):
+    for control in ce.controls:
+        if control.assessment.value == "hybrid":
+            assert any(r.source == "redscope" for r in control.evidence), control.id
+
+
+def test_redscope_rules_reference_checks_redscope_can_emit(ce):
+    known = set().union(*MODULE_CHECKS.values())
+    for control in ce.controls:
+        for rule in control.evidence:
+            if rule.source == "redscope":
+                assert rule.check in known, f"{control.id}: unknown check {rule.check}"

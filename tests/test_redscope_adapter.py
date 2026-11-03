@@ -215,3 +215,43 @@ def test_module_checks_match_installed_redscope_source():
             if kw.arg == "check_id"
         }
         assert emitted == expected, module
+
+
+# --- Real redscope entry points (no network: error paths only) --------------------------
+
+
+def test_missing_redscope_raises_a_clear_error(monkeypatch):
+    import sys
+
+    from complyscope.collectors.redscope_adapter import (
+        RedscopeUnavailableError,
+        run_redscope_module,
+    )
+
+    monkeypatch.setitem(sys.modules, "redscope.core.config", None)
+
+    with pytest.raises(RedscopeUnavailableError, match="complyscope\\[scan\\]"):
+        run_redscope_module("ssltls", "localhost")
+
+
+def test_unknown_redscope_module_is_an_error():
+    pytest.importorskip("redscope")
+    from complyscope.collectors.redscope_adapter import run_redscope_module
+
+    with pytest.raises(RuntimeError, match="no module named 'nope'"):
+        run_redscope_module("nope", "localhost")
+
+
+def test_redscope_version_names_the_installed_release(monkeypatch):
+    import importlib.metadata
+
+    from complyscope.collectors.redscope_adapter import redscope_version
+
+    monkeypatch.setattr(importlib.metadata, "version", lambda name: "2.0.0")
+    assert redscope_version() == "redscope 2.0.0"
+
+    def missing(name):
+        raise importlib.metadata.PackageNotFoundError(name)
+
+    monkeypatch.setattr(importlib.metadata, "version", missing)
+    assert redscope_version() == "redscope (not installed)"

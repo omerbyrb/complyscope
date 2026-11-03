@@ -1,5 +1,5 @@
 # Aim: only secure, necessary network services are reachable from the internet.
-# Evidence rules are added once redscope exposes stable check ids (week 2).
+# Evidence rules reference redscope check ids (see redscope docs/check-ids.md).
 controls:
   - id: CE-FW-01
     theme: firewalls
@@ -9,7 +9,11 @@ controls:
       functionality) or runs its own software firewall. Devices used on networks the
       organisation does not control, such as public Wi-Fi, must use a software firewall.
     assessment: hybrid
-    # Candidate evidence: redscope port scan of the external boundary.
+    # External view only: a risky service reachable from the internet means the boundary
+    # is not blocking it. Device firewalls are covered by the questionnaire (week 5).
+    evidence:
+      - source: redscope
+        check: portscan.risky_service_exposed
     crosswalk:
       iso27001-2022: [A.8.20]
       nist-csf-2.0: [PR.IR-01]
@@ -33,7 +37,10 @@ controls:
       documented business need, and then only when protected by MFA or by an IP allow
       list of a few trusted addresses combined with well-managed passwords.
     assessment: hybrid
-    # Candidate evidence: redscope service enumeration finding exposed admin panels.
+    # Telnet, RDP and VNC reachable from the internet are exposed remote-admin interfaces.
+    evidence:
+      - source: redscope
+        check: portscan.risky_service_exposed
     crosswalk:
       iso27001-2022: [A.8.20, A.8.5]
       nist-csf-2.0: [PR.IR-01, PR.AA-03]
@@ -45,7 +52,20 @@ controls:
       The default firewall policy denies inbound traffic; only explicitly allowed
       services accept connections.
     assessment: hybrid
-    # Candidate evidence: redscope port scan showing unexpected open ports.
+    # Services answering the internet without any authentication.
+    evidence:
+      - source: redscope
+        check: serviceenum.ftp_anonymous_login
+      - source: redscope
+        check: serviceenum.redis_no_auth
+      - source: redscope
+        check: serviceenum.elasticsearch_no_auth
+      - source: redscope
+        check: serviceenum.mongodb_no_auth
+      - source: redscope
+        check: serviceenum.memcached_no_auth
+      - source: redscope
+        check: serviceenum.zookeeper_no_auth
     crosswalk:
       iso27001-2022: [A.8.20]
       nist-csf-2.0: [PR.IR-01]

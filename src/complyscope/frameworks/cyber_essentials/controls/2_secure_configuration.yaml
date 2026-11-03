@@ -29,7 +29,24 @@ controls:
       Applications, system utilities and network services that a device does not need
       for its role are uninstalled or switched off.
     assessment: hybrid
-    # Candidate evidence: redscope service enumeration, weak TLS protocols, banner leaks.
+    # Insecure features left enabled on internet-facing services.
+    evidence:
+      - source: redscope
+        check: ssltls.deprecated_protocol
+      - source: redscope
+        check: ssltls.weak_cipher
+      - source: redscope
+        check: serviceenum.ssh_weak_algorithms
+      - source: redscope
+        check: serviceenum.smtp_open_relay
+      - source: redscope
+        check: serviceenum.smtp_vrfy_enabled
+      - source: redscope
+        check: serviceenum.smtp_expn_enabled
+      - source: redscope
+        check: serviceenum.dns_open_recursion
+      - source: redscope
+        check: headers.info_disclosure
     crosswalk:
       iso27001-2022: [A.8.9, A.8.19]
       nist-csf-2.0: [PR.PS-01]

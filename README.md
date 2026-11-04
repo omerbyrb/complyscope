@@ -55,6 +55,24 @@ complyscope controls list --theme user_access_control
 pytest
 ```
 
+## Collecting evidence
+
+Technical checks need the `scan` extra, which installs
+[redscope](https://github.com/omerbyrb/redscope) v2.0.0:
+
+```bash
+pip install -e ".[scan]"
+cp examples/scope.example.yaml scope.yaml   # then edit: organisation, authorisation, hosts
+complyscope collect --scope scope.yaml --output evidence.json
+```
+
+`collect` refuses to run without a completed authorisation block, only touches hosts listed
+in the scope, shows what it is about to do and asks for confirmation (`--yes` skips the
+prompt). The result is an evidence file in which every check is recorded as `present` or
+`absent`. Checks that could not run are listed as skipped and produce no evidence, so they
+can never count as a pass. `scope.yaml` and `evidence*.json` are git-ignored because they
+describe real systems.
+
 ## Roadmap
 
 | Week | Goal |

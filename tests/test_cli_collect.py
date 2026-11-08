@@ -14,7 +14,10 @@ EXAMPLE_SCOPE = str(Path(__file__).resolve().parents[1] / "examples" / "scope.ex
 
 
 def clean_result(module, target):
-    data = {"banners": [{"port": 22, "service": "ssh"}]} if module == "banner" else {}
+    data = {
+        "portscan": {"open_ports": [{"port": 22}]},
+        "banner": {"banners": [{"port": 22, "service": "ssh"}]},
+    }.get(module, {})
     return {"module": module, "target": target, "findings": [], "data": data, "errors": []}
 
 

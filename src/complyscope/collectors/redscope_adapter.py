@@ -164,7 +164,7 @@ class RedscopeCollector:
         run = HostRun(target=target)
         outputs: dict[str, Mapping[str, Any]] = {}
 
-        for module in self.modules:
+        for index, module in enumerate(self.modules):
             kwargs: dict[str, Any] = {}
             if module == "cvelookup":
                 banners = outputs.get("banner", {}).get("data", {}).get("banners")
@@ -175,19 +175,31 @@ class RedscopeCollector:
 
             try:
                 result = self.runner(module, target, **kwargs)
+                problem = "; ".join(result["errors"])
             except RedscopeUnavailableError:
                 raise
             except Exception as e:  # one failing module must not stop the others
-                run.skipped[module] = f"crashed: {type(e).__name__}: {e}"
+                result, problem = {}, f"crashed: {type(e).__name__}: {e}"
+
+            if module == "portscan" and not problem and not result["data"].get("open_ports"):
+                problem = "no open ports seen; the host may be down or filtered"
+            if problem:
+                run.skipped[module] = problem
+                if module == "portscan":
+                    # redscope reports a timeout and a closed port the same way, so without
+                    # an open port a silent host would look clean to every module (ADR-0011).
+                    for later in self.modules[index + 1 :]:
+                        run.skipped[later] = "portscan could not confirm the host is reachable"
+                    break
                 continue
 
-            if result["errors"]:
-                run.skipped[module] = "; ".join(result["errors"])
-                continue
             outputs[module] = result
-            run.evidence.extend(
-                evidence_from_result(
-                    result, target=target, collected_at=self.clock(), collector=self.collector
-                )
+            evidence = evidence_from_result(
+                result, target=target, collected_at=self.clock(), collector=self.collector
             )
+            if module == "banner" and not result["data"].get("banners"):
+                # "No end-of-life software" means nothing if no service was identified.
+                evidence = [e for e in evidence if e.observed == "present"]
+                run.skipped[module] = "no services identified, so no absent evidence recorded"
+            run.evidence.extend(evidence)
         return run

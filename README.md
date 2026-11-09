@@ -73,6 +73,18 @@ prompt). The result is an evidence file in which every check is recorded as `pre
 can never count as a pass. `scope.yaml` and `evidence*.json` are git-ignored because they
 describe real systems.
 
+## Assessing controls
+
+```bash
+complyscope assess --scope scope.yaml --evidence evidence.json
+```
+
+`assess` sends no network traffic. It judges each control as `pass`, `fail`, `partial` or
+`not_assessed` and reports two separate figures: **compliance** (controls that pass) and
+**coverage** (controls that could be assessed at all). Until the questionnaire module
+exists, a clean scan cannot pass a Cyber Essentials control, and the figures are never a
+certification.
+
 ## Roadmap
 
 | Week | Goal |

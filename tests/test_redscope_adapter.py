@@ -133,7 +133,8 @@ def collector_with(results):
 
 def all_clean():
     return {m: scan_result(m) for m in CE_MODULES} | {
-        "banner": scan_result("banner", data={"banners": [{"port": 22, "service": "ssh"}]})
+        "portscan": scan_result("portscan", data={"open_ports": [{"port": 22}]}),
+        "banner": scan_result("banner", data={"banners": [{"port": 22, "service": "ssh"}]}),
     }
 
 
@@ -194,6 +195,60 @@ def test_module_reporting_errors_is_listed_as_skipped():
     run = collector.collect("app.example.test")
 
     assert run.skipped["headers"] == "Connection refused"
+
+
+def later_modules():
+    return CE_MODULES[CE_MODULES.index("portscan") + 1 :]
+
+
+def test_host_with_no_open_ports_yields_no_evidence_and_no_further_traffic():
+    results = all_clean() | {"portscan": scan_result("portscan", data={"open_ports": []})}
+    collector, runner = collector_with(results)
+
+    run = collector.collect("app.example.test")
+
+    assert run.evidence == []
+    assert [call[0] for call in runner.calls] == ["portscan"]
+    assert "no open ports" in run.skipped["portscan"]
+    assert set(later_modules()) <= set(run.skipped)
+
+
+@pytest.mark.parametrize(
+    "portscan",
+    [
+        ConnectionResetError("reset by peer"),
+        scan_result("portscan", errors=["DNS resolution failed"]),
+    ],
+)
+def test_failed_portscan_stops_the_host(portscan):
+    collector, runner = collector_with(all_clean() | {"portscan": portscan})
+
+    run = collector.collect("app.example.test")
+
+    assert run.evidence == []
+    assert [call[0] for call in runner.calls] == ["portscan"]
+    assert set(later_modules()) <= set(run.skipped)
+
+
+def test_banner_without_services_records_no_absent_evidence():
+    results = all_clean() | {"banner": scan_result("banner", data={"banners": []})}
+    collector, _ = collector_with(results)
+
+    run = collector.collect("app.example.test")
+
+    assert not any(e.check.startswith("banner.") for e in run.evidence)
+    assert "no services identified" in run.skipped["banner"]
+
+
+def test_banner_without_services_keeps_real_findings():
+    finding = {"check_id": "banner.version_disclosed", "severity": "low"}
+    results = all_clean() | {"banner": scan_result("banner", [finding], data={"banners": []})}
+    collector, _ = collector_with(results)
+
+    run = collector.collect("app.example.test")
+
+    banner = [e for e in run.evidence if e.check.startswith("banner.")]
+    assert [(e.check, e.observed) for e in banner] == [("banner.version_disclosed", "present")]
 
 
 # --- Drift check against the installed redscope ----------------------------------------

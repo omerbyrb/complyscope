@@ -4,11 +4,13 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import click
+from pydantic import ValidationError
 
 from complyscope import __version__
 from complyscope.collectors import redscope_adapter
 from complyscope.controls import FrameworkLoadError, load_builtin_framework
-from complyscope.models import EvidenceCollection
+from complyscope.mapping.engine import evaluate, score
+from complyscope.models import ControlStatus, EvidenceCollection
 from complyscope.scoping import OutOfScopeError, ScopeError, load_scope
 
 AUTHORISED_USE_NOTICE = (
@@ -142,6 +144,91 @@ def collect(scope_path: Path, output: Path, hosts: tuple[str, ...], yes: bool, f
         f"Wrote {len(evidence)} evidence items "
         f"({present} present, {len(evidence) - present} absent) to {output}"
     )
+
+
+@cli.command()
+@click.option(
+    "--scope",
+    "scope_path",
+    type=click.Path(path_type=Path),
+    default="scope.yaml",
+    show_default=True,
+    help="Scope file the evidence was collected under.",
+)
+@click.option(
+    "--evidence",
+    "evidence_path",
+    type=click.Path(path_type=Path),
+    default="evidence.json",
+    show_default=True,
+    help="Evidence file written by the collect command.",
+)
+@click.option(
+    "--framework",
+    "-f",
+    default="cyber-essentials",
+    show_default=True,
+    help="Framework id to assess against.",
+)
+def assess(scope_path: Path, evidence_path: Path, framework: str) -> None:
+    """Judge controls against collected evidence and show the score."""
+    try:
+        scope = load_scope(scope_path)
+    except ScopeError as e:
+        raise click.BadParameter(str(e), param_hint="--scope") from e
+    try:
+        catalogue = load_builtin_framework(framework)
+    except FrameworkLoadError as e:
+        raise click.BadParameter(str(e), param_hint="--framework") from e
+    collection = _load_evidence(evidence_path)
+
+    # Evidence from another engagement must not be judged against this scope.
+    if collection.organisation != scope.organisation:
+        raise click.BadParameter(
+            f"{evidence_path} belongs to {collection.organisation!r}, "
+            f"but the scope is for {scope.organisation!r}",
+            param_hint="--evidence",
+        )
+    outside = sorted({item.target for item in collection.items} - set(scope.hosts))
+    if outside:
+        raise click.BadParameter(
+            f"{evidence_path} has evidence for hosts outside the scope: {', '.join(outside)}",
+            param_hint="--evidence",
+        )
+
+    results = evaluate(catalogue, collection, scope.hosts)
+    titles = {control.id: control.title for control in catalogue.controls}
+    click.echo(f"{catalogue.name} v{catalogue.version} assessment for {scope.organisation}\n")
+    _echo_table(
+        ("ID", "STATUS", "TITLE"),
+        [(r.control_id, r.status.value, titles[r.control_id]) for r in results],
+    )
+
+    failed = [r for r in results if r.status is ControlStatus.FAIL]
+    if failed:
+        click.echo("\nFailed controls:")
+        for result in failed:
+            click.echo(f"{result.control_id}: {result.rationale}")
+
+    summary = score(results)
+    assessed = summary.total - summary.not_assessed
+    click.echo(
+        f"\nCompliance: {summary.compliance_percent}% "
+        f"({summary.passed} of {summary.total} controls pass)"
+    )
+    click.echo(
+        f"Coverage:   {summary.coverage_percent}% ({assessed} of {summary.total} controls assessed)"
+    )
+    click.echo("These figures show progress; this is not a certification.")
+
+
+def _load_evidence(path: Path) -> EvidenceCollection:
+    if not path.is_file():
+        raise click.BadParameter(f"{path}: file not found", param_hint="--evidence")
+    try:
+        return EvidenceCollection.from_json(path.read_text(encoding="utf-8"))
+    except ValidationError as e:
+        raise click.BadParameter(f"{path}: invalid evidence: {e}", param_hint="--evidence") from e
 
 
 def _echo_table(header: tuple[str, ...], rows: list[tuple[str, ...]]) -> None:

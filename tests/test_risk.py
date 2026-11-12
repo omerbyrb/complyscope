@@ -64,6 +64,11 @@ def test_every_possible_score_has_a_level():
     assert {risk_level(s) for s in scores} == set(RiskLevel)
 
 
+def test_impossible_score_is_rejected():
+    with pytest.raises(ValueError, match="not a possible"):
+        risk_level(7)
+
+
 def test_methodology_document_matches_the_code():
     text = DOC.read_text()
 

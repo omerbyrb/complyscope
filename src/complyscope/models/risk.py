@@ -18,6 +18,11 @@ class RiskLevel(StrEnum):
     CRITICAL = "critical"
 
 
+class RiskStatus(StrEnum):
+    OPEN = "open"
+    CLOSED = "closed"
+
+
 class Treatment(StrEnum):
     MITIGATE = "mitigate"
     ACCEPT = "accept"
@@ -74,6 +79,7 @@ class Risk(StrictModel):
     raised_on: date
     review_by: date
     evidence_summary: tuple[str, ...] = ()
+    status: RiskStatus = RiskStatus.OPEN
 
     @model_validator(mode="after")
     def _review_after_raised(self) -> "Risk":
@@ -91,6 +97,8 @@ class Risk(StrictModel):
 
     def needs_attention(self) -> list[str]:
         """What the risk owner still has to do before this risk is properly managed."""
+        if self.status is RiskStatus.CLOSED:
+            return []
         reasons = []
         if self.owner is None:
             reasons.append("no risk owner")
@@ -101,3 +109,20 @@ class Risk(StrictModel):
         if self.treatment is Treatment.ACCEPT and self.level not in ACCEPTABLE_LEVELS:
             reasons.append("accepted above the risk appetite")
         return reasons
+
+
+class RiskRegister(StrictModel):
+    """All risks for one organisation and framework; edited by people, refreshed by the tool."""
+
+    organisation: NonEmptyStr
+    framework: FrameworkId
+    risks: tuple[Risk, ...] = ()
+
+    @model_validator(mode="after")
+    def _unique_ids(self) -> "RiskRegister":
+        seen: set[str] = set()
+        for risk in self.risks:
+            if risk.id in seen:
+                raise ValueError(f"duplicate risk id: {risk.id}")
+            seen.add(risk.id)
+        return self

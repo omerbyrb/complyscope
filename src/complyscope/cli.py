@@ -1,6 +1,6 @@
 """Command-line entry point for complyscope."""
 
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 import click
@@ -10,7 +10,14 @@ from complyscope import __version__
 from complyscope.collectors import redscope_adapter
 from complyscope.controls import FrameworkLoadError, load_builtin_framework
 from complyscope.mapping.engine import evaluate, score
-from complyscope.models import ControlStatus, EvidenceCollection
+from complyscope.models import ControlResult, ControlStatus, EvidenceCollection, Framework, Scope
+from complyscope.risk import ACCEPTABLE_LEVELS, draft_risks
+from complyscope.risk.register import (
+    RegisterError,
+    load_register,
+    merge_register,
+    write_register,
+)
 from complyscope.scoping import OutOfScopeError, ScopeError, load_scope
 
 AUTHORISED_USE_NOTICE = (
@@ -172,31 +179,7 @@ def collect(scope_path: Path, output: Path, hosts: tuple[str, ...], yes: bool, f
 )
 def assess(scope_path: Path, evidence_path: Path, framework: str) -> None:
     """Judge controls against collected evidence and show the score."""
-    try:
-        scope = load_scope(scope_path)
-    except ScopeError as e:
-        raise click.BadParameter(str(e), param_hint="--scope") from e
-    try:
-        catalogue = load_builtin_framework(framework)
-    except FrameworkLoadError as e:
-        raise click.BadParameter(str(e), param_hint="--framework") from e
-    collection = _load_evidence(evidence_path)
-
-    # Evidence from another engagement must not be judged against this scope.
-    if collection.organisation != scope.organisation:
-        raise click.BadParameter(
-            f"{evidence_path} belongs to {collection.organisation!r}, "
-            f"but the scope is for {scope.organisation!r}",
-            param_hint="--evidence",
-        )
-    outside = sorted({item.target for item in collection.items} - set(scope.hosts))
-    if outside:
-        raise click.BadParameter(
-            f"{evidence_path} has evidence for hosts outside the scope: {', '.join(outside)}",
-            param_hint="--evidence",
-        )
-
-    results = evaluate(catalogue, collection, scope.hosts)
+    scope, catalogue, results = _load_assessment(scope_path, evidence_path, framework)
     titles = {control.id: control.title for control in catalogue.controls}
     click.echo(f"{catalogue.name} v{catalogue.version} assessment for {scope.organisation}\n")
     _echo_table(
@@ -220,6 +203,115 @@ def assess(scope_path: Path, evidence_path: Path, framework: str) -> None:
         f"Coverage:   {summary.coverage_percent}% ({assessed} of {summary.total} controls assessed)"
     )
     click.echo("These figures show progress; this is not a certification.")
+
+
+@cli.command()
+@click.option(
+    "--scope",
+    "scope_path",
+    type=click.Path(path_type=Path),
+    default="scope.yaml",
+    show_default=True,
+    help="Scope file the evidence was collected under.",
+)
+@click.option(
+    "--evidence",
+    "evidence_path",
+    type=click.Path(path_type=Path),
+    default="evidence.json",
+    show_default=True,
+    help="Evidence file written by the collect command.",
+)
+@click.option(
+    "--register",
+    "register_path",
+    type=click.Path(path_type=Path, dir_okay=False),
+    default="risks.yaml",
+    show_default=True,
+    help="Risk register to create or update. Owner decisions in it are kept.",
+)
+@click.option(
+    "--framework",
+    "-f",
+    default="cyber-essentials",
+    show_default=True,
+    help="Framework id to assess against.",
+)
+def risks(scope_path: Path, evidence_path: Path, register_path: Path, framework: str) -> None:
+    """Draft risks from failed controls and update the risk register."""
+    scope, catalogue, results = _load_assessment(scope_path, evidence_path, framework)
+    try:
+        existing = load_register(register_path)
+        register, changes = merge_register(
+            existing,
+            draft_risks(catalogue, results, today=date.today()),
+            results,
+            organisation=scope.organisation,
+            framework=catalogue.id,
+        )
+    except RegisterError as e:
+        raise click.BadParameter(str(e), param_hint="--register") from e
+    write_register(register_path, register)
+
+    click.echo(f"Risk register for {scope.organisation} ({catalogue.name}): {register_path}")
+    for label, ids in [
+        ("Added", changes.added),
+        ("Reopened", changes.reopened),
+        ("No longer failing (review for closure)", changes.no_longer_failing),
+        ("Could not be reassessed", changes.not_reassessed),
+    ]:
+        if ids:
+            click.echo(f"{label}: {', '.join(ids)}")
+
+    open_risks = sorted(
+        (r for r in register.risks if r.status.value == "open"), key=lambda r: (-r.score, r.id)
+    )
+    if not open_risks:
+        click.echo("\nNo open risks.")
+        return
+    click.echo()
+    _echo_table(
+        ("ID", "LEVEL", "SCORE", "OWNER", "TITLE"),
+        [(r.id, r.level.value, str(r.score), r.owner or "-", r.title) for r in open_risks],
+    )
+
+    attention = [(r.id, r.needs_attention()) for r in open_risks if r.needs_attention()]
+    if attention:
+        click.echo("\nNeeds attention:")
+        for risk_id, reasons in attention:
+            click.echo(f"{risk_id}: {', '.join(reasons)}")
+    above = sum(r.level not in ACCEPTABLE_LEVELS for r in open_risks)
+    click.echo(f"\n{above} open risk(s) above the risk appetite (high or critical).")
+
+
+def _load_assessment(
+    scope_path: Path, evidence_path: Path, framework: str
+) -> tuple[Scope, Framework, tuple[ControlResult, ...]]:
+    """Load scope, framework and evidence, check they belong together, and evaluate."""
+    try:
+        scope = load_scope(scope_path)
+    except ScopeError as e:
+        raise click.BadParameter(str(e), param_hint="--scope") from e
+    try:
+        catalogue = load_builtin_framework(framework)
+    except FrameworkLoadError as e:
+        raise click.BadParameter(str(e), param_hint="--framework") from e
+    collection = _load_evidence(evidence_path)
+
+    # Evidence from another engagement must not be judged against this scope.
+    if collection.organisation != scope.organisation:
+        raise click.BadParameter(
+            f"{evidence_path} belongs to {collection.organisation!r}, "
+            f"but the scope is for {scope.organisation!r}",
+            param_hint="--evidence",
+        )
+    outside = sorted({item.target for item in collection.items} - set(scope.hosts))
+    if outside:
+        raise click.BadParameter(
+            f"{evidence_path} has evidence for hosts outside the scope: {', '.join(outside)}",
+            param_hint="--evidence",
+        )
+    return scope, catalogue, evaluate(catalogue, collection, scope.hosts)
 
 
 def _load_evidence(path: Path) -> EvidenceCollection:

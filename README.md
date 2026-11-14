@@ -85,6 +85,19 @@ complyscope assess --scope scope.yaml --evidence evidence.json
 exists, a clean scan cannot pass a Cyber Essentials control, and the figures are never a
 certification.
 
+## Managing risks
+
+```bash
+complyscope risks --scope scope.yaml --evidence evidence.json --register risks.yaml
+```
+
+Every failed control becomes a drafted risk in `risks.yaml`, scored with the
+[risk methodology](docs/risk-methodology.md) (likelihood × impact, 5 × 5). complyscope
+estimates likelihood from the evidence but leaves impact, owner, treatment and plan to a
+person, and lists what each risk still needs. Edit `risks.yaml` freely: running the command
+again refreshes only likelihood and evidence, adds new risks, reopens closed risks that fail
+again, and points out risks whose controls no longer fail so their owner can close them.
+
 ## Roadmap
 
 | Week | Goal |

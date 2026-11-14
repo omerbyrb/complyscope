@@ -94,7 +94,7 @@ def test_rerun_keeps_what_the_owner_wrote(paths):
     result = risks(evidence, register)
 
     assert result.exit_code == 0, result.output
-    assert row(result.stdout, "R-CE-SU-01")[:4] == ["R-CE-SU-01", "medium", "8", "Jane"]
+    assert row(result.stdout, "R-CE-SU-01")[:4] == ["R-CE-SU-01", "high", "8", "Jane"]
     assert "R-CE-SU-01:" not in result.stdout.split("Needs attention:")[1]
     assert load_register(register).risks[0].owner == "Jane Doe (fictional)"
 

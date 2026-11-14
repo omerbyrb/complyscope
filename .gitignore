@@ -31,6 +31,9 @@ evidence*.json
 /scope.yaml
 /scope.*.yaml
 
+# Real risk registers describe an organisation's weaknesses
+/risks.yaml
+
 # OS / editors
 .DS_Store
 .idea/

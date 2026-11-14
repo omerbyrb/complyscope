@@ -8,6 +8,7 @@ from complyscope.models.control import (
 )
 from complyscope.models.evidence import Evidence, EvidenceCollection, Severity
 from complyscope.models.result import ComplianceScore, ControlResult, ControlStatus
+from complyscope.models.risk import Risk, RiskLevel, RiskRegister, RiskStatus, Treatment
 from complyscope.models.scope import Authorisation, Scope, Target
 
 __all__ = [
@@ -23,7 +24,12 @@ __all__ = [
     "Framework",
     "QuestionnaireRule",
     "RedscopeRule",
+    "Risk",
+    "RiskLevel",
+    "RiskRegister",
+    "RiskStatus",
     "Scope",
     "Severity",
     "Target",
+    "Treatment",
 ]

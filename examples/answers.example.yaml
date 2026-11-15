@@ -1,0 +1,40 @@
+# Example questionnaire answers for a fictional organisation.
+# Copy to answers.yaml and answer for your own organisation. Allowed answers:
+#   yes             the requirement is met
+#   no              it is not met (the control fails and a risk is drafted)
+#   not_applicable  only where the question allows it, with a note explaining why
+# Unanswered questions leave their controls not assessed.
+organisation: Acme Ltd (fictional)
+framework: cyber-essentials
+answers:
+  - {question: CE-FW-01-Q1, answer: "yes", answered_by: Jane Doe (fictional), answered_on: 2026-11-15}
+  - {question: CE-FW-02-Q1, answer: "yes", answered_by: Jane Doe (fictional), answered_on: 2026-11-15}
+  - {question: CE-FW-03-Q1, answer: not_applicable, answered_by: Jane Doe (fictional), answered_on: 2026-11-15,
+     note: No admin interface is reachable from the internet; administration is via the office LAN only.}
+  - {question: CE-FW-04-Q1, answer: "yes", answered_by: Jane Doe (fictional), answered_on: 2026-11-15}
+  - {question: CE-FW-05-Q1, answer: "no", answered_by: Jane Doe (fictional), answered_on: 2026-11-15,
+     note: Inbound rules exist but nobody has documented why.}
+  - {question: CE-SC-01-Q1, answer: "yes", answered_by: Jane Doe (fictional), answered_on: 2026-11-15}
+  - {question: CE-SC-02-Q1, answer: "yes", answered_by: Jane Doe (fictional), answered_on: 2026-11-15}
+  - {question: CE-SC-03-Q1, answer: "yes", answered_by: Jane Doe (fictional), answered_on: 2026-11-15}
+  - {question: CE-SC-04-Q1, answer: "yes", answered_by: Jane Doe (fictional), answered_on: 2026-11-15}
+  - {question: CE-SC-05-Q1, answer: "yes", answered_by: Jane Doe (fictional), answered_on: 2026-11-15}
+  - {question: CE-SC-06-Q1, answer: "yes", answered_by: Jane Doe (fictional), answered_on: 2026-11-15}
+  - {question: CE-SU-01-Q1, answer: "yes", answered_by: Jane Doe (fictional), answered_on: 2026-11-15}
+  - {question: CE-SU-02-Q1, answer: "yes", answered_by: Jane Doe (fictional), answered_on: 2026-11-15}
+  - {question: CE-SU-03-Q1, answer: "yes", answered_by: Jane Doe (fictional), answered_on: 2026-11-15}
+  - {question: CE-SU-04-Q1, answer: "yes", answered_by: Jane Doe (fictional), answered_on: 2026-11-15}
+  - {question: CE-UA-01-Q1, answer: "yes", answered_by: Jane Doe (fictional), answered_on: 2026-11-15}
+  - {question: CE-UA-02-Q1, answer: "yes", answered_by: Jane Doe (fictional), answered_on: 2026-11-15}
+  - {question: CE-UA-03-Q1, answer: "yes", answered_by: Jane Doe (fictional), answered_on: 2026-11-15}
+  - {question: CE-UA-04-Q1, answer: "no", answered_by: Jane Doe (fictional), answered_on: 2026-11-15,
+     note: MFA is on for Microsoft 365 but not for the accounting SaaS.}
+  - {question: CE-UA-05-Q1, answer: "yes", answered_by: Jane Doe (fictional), answered_on: 2026-11-15}
+  - {question: CE-UA-06-Q1, answer: "yes", answered_by: Jane Doe (fictional), answered_on: 2026-11-15}
+  - {question: CE-UA-07-Q1, answer: "yes", answered_by: Jane Doe (fictional), answered_on: 2026-11-15}
+  - {question: CE-UA-08-Q1, answer: "yes", answered_by: Jane Doe (fictional), answered_on: 2026-11-15}
+  - {question: CE-UA-09-Q1, answer: "yes", answered_by: Jane Doe (fictional), answered_on: 2026-11-15}
+  - {question: CE-MP-01-Q1, answer: "yes", answered_by: Jane Doe (fictional), answered_on: 2026-11-15}
+  - {question: CE-MP-02-Q1, answer: "yes", answered_by: Jane Doe (fictional), answered_on: 2026-11-15}
+  - {question: CE-MP-03-Q1, answer: not_applicable, answered_by: Jane Doe (fictional), answered_on: 2026-11-15,
+     note: Anti-malware software is used on every device instead (CE-MP-02).}

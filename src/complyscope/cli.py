@@ -10,7 +10,15 @@ from complyscope import __version__
 from complyscope.collectors import redscope_adapter
 from complyscope.controls import FrameworkLoadError, load_builtin_framework
 from complyscope.mapping.engine import evaluate, score
-from complyscope.models import ControlResult, ControlStatus, EvidenceCollection, Framework, Scope
+from complyscope.models import (
+    AnswerSheet,
+    ControlResult,
+    ControlStatus,
+    EvidenceCollection,
+    Framework,
+    Scope,
+)
+from complyscope.questionnaire import AnswersError, load_answers
 from complyscope.risk import ACCEPTABLE_LEVELS, draft_risks
 from complyscope.risk.register import (
     RegisterError,
@@ -177,9 +185,17 @@ def collect(scope_path: Path, output: Path, hosts: tuple[str, ...], yes: bool, f
     show_default=True,
     help="Framework id to assess against.",
 )
-def assess(scope_path: Path, evidence_path: Path, framework: str) -> None:
-    """Judge controls against collected evidence and show the score."""
-    scope, catalogue, results = _load_assessment(scope_path, evidence_path, framework)
+@click.option(
+    "--answers",
+    "answers_path",
+    type=click.Path(path_type=Path, dir_okay=False),
+    default="answers.yaml",
+    show_default=True,
+    help="Questionnaire answers. Without it, questionnaire parts stay not assessed.",
+)
+def assess(scope_path: Path, evidence_path: Path, framework: str, answers_path: Path) -> None:
+    """Judge controls against collected evidence and answers, and show the score."""
+    scope, catalogue, results = _load_assessment(scope_path, evidence_path, framework, answers_path)
     titles = {control.id: control.title for control in catalogue.controls}
     click.echo(f"{catalogue.name} v{catalogue.version} assessment for {scope.organisation}\n")
     _echo_table(
@@ -237,9 +253,19 @@ def assess(scope_path: Path, evidence_path: Path, framework: str) -> None:
     show_default=True,
     help="Framework id to assess against.",
 )
-def risks(scope_path: Path, evidence_path: Path, register_path: Path, framework: str) -> None:
+@click.option(
+    "--answers",
+    "answers_path",
+    type=click.Path(path_type=Path, dir_okay=False),
+    default="answers.yaml",
+    show_default=True,
+    help="Questionnaire answers. Without it, questionnaire parts stay not assessed.",
+)
+def risks(
+    scope_path: Path, evidence_path: Path, register_path: Path, framework: str, answers_path: Path
+) -> None:
     """Draft risks from failed controls and update the risk register."""
-    scope, catalogue, results = _load_assessment(scope_path, evidence_path, framework)
+    scope, catalogue, results = _load_assessment(scope_path, evidence_path, framework, answers_path)
     try:
         existing = load_register(register_path)
         register, changes = merge_register(
@@ -285,9 +311,9 @@ def risks(scope_path: Path, evidence_path: Path, register_path: Path, framework:
 
 
 def _load_assessment(
-    scope_path: Path, evidence_path: Path, framework: str
+    scope_path: Path, evidence_path: Path, framework: str, answers_path: Path
 ) -> tuple[Scope, Framework, tuple[ControlResult, ...]]:
-    """Load scope, framework and evidence, check they belong together, and evaluate."""
+    """Load scope, framework, evidence and answers, check they belong together, evaluate."""
     try:
         scope = load_scope(scope_path)
     except ScopeError as e:
@@ -311,7 +337,24 @@ def _load_assessment(
             f"{evidence_path} has evidence for hosts outside the scope: {', '.join(outside)}",
             param_hint="--evidence",
         )
-    return scope, catalogue, evaluate(catalogue, collection, scope.hosts)
+    answers = _load_answers(answers_path, catalogue, scope)
+    return scope, catalogue, evaluate(catalogue, collection, scope.hosts, answers)
+
+
+def _load_answers(path: Path, catalogue: Framework, scope: Scope) -> AnswerSheet | None:
+    try:
+        answers = load_answers(path, catalogue)
+    except AnswersError as e:
+        raise click.BadParameter(str(e), param_hint="--answers") from e
+    if answers is None:
+        click.echo(f"No answers file ({path}): questionnaire parts are not assessed.\n")
+    elif answers.organisation != scope.organisation:
+        raise click.BadParameter(
+            f"{path} belongs to {answers.organisation!r}, "
+            f"but the scope is for {scope.organisation!r}",
+            param_hint="--answers",
+        )
+    return answers
 
 
 def _load_evidence(path: Path) -> EvidenceCollection:

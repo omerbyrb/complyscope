@@ -30,7 +30,14 @@ def seen(check, target, observed="absent"):
 def clean_evidence(overrides=()):
     """Every catalogue check, clean on every in-scope host, except (check, host) overrides."""
     ce = load_builtin_framework("cyber-essentials")
-    checks = sorted({rule.check for control in ce.controls for rule in control.evidence})
+    checks = sorted(
+        {
+            rule.check
+            for control in ce.controls
+            for rule in control.evidence
+            if rule.source == "redscope"
+        }
+    )
     return [
         seen(check, host, "present" if (check, host) in overrides else "absent")
         for check in checks
@@ -141,3 +148,45 @@ def test_assess_never_runs_a_scan(evidence_file, monkeypatch):
     monkeypatch.setattr(redscope_adapter, "run_redscope_module", forbidden)
 
     assert assess(evidence_file(clean_evidence())).exit_code == 0
+
+
+EXAMPLE_ANSWERS = Path(__file__).resolve().parents[1] / "examples" / "answers.example.yaml"
+
+
+def test_answers_complete_the_assessment(evidence_file):
+    result = assess(evidence_file(clean_evidence()), "--answers", str(EXAMPLE_ANSWERS))
+
+    assert result.exit_code == 0, result.output
+    assert row(result.stdout, "CE-FW-01")[1] == "pass"
+    assert row(result.stdout, "CE-FW-03")[1] == "pass"
+    assert row(result.stdout, "CE-UA-04")[1] == "fail"
+    assert "CE-UA-04: Failed: CE-UA-04-Q1 answered no" in result.stdout
+    assert "Compliance: 92.6% (25 of 27 controls pass)" in result.stdout
+    assert "Coverage:   100.0% (27 of 27 controls assessed)" in result.stdout
+
+
+def test_missing_answers_file_is_mentioned(evidence_file, tmp_path):
+    result = assess(evidence_file([]), "--answers", str(tmp_path / "answers.yaml"))
+
+    assert result.exit_code == 0, result.output
+    assert "No answers file" in result.stdout
+
+
+def test_answers_from_another_organisation_are_refused(evidence_file, tmp_path):
+    other = tmp_path / "answers.yaml"
+    other.write_text(EXAMPLE_ANSWERS.read_text().replace("Acme Ltd (fictional)", "Other Ltd"))
+
+    result = assess(evidence_file([]), "--answers", str(other))
+
+    assert result.exit_code == 2
+    assert "Other Ltd" in result.stderr
+
+
+def test_invalid_answers_file_is_a_usage_error(evidence_file, tmp_path):
+    bad = tmp_path / "answers.yaml"
+    bad.write_text("- not answers\n")
+
+    result = assess(evidence_file([]), "--answers", str(bad))
+
+    assert result.exit_code == 2
+    assert "answers.yaml" in result.stderr

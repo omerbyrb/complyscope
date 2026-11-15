@@ -10,10 +10,12 @@ controls:
       organisation does not control, such as public Wi-Fi, must use a software firewall.
     assessment: hybrid
     # External view only: a risky service reachable from the internet means the boundary
-    # is not blocking it. Device firewalls are covered by the questionnaire (week 5).
+    # is not blocking it. Device firewalls are covered by the question.
     evidence:
       - source: redscope
         check: portscan.risky_service_exposed
+      - source: questionnaire
+        question: CE-FW-01-Q1
     crosswalk:
       iso27001-2022: [A.8.20]
       nist-csf-2.0: [PR.IR-01]
@@ -25,6 +27,9 @@ controls:
       Factory-default administrative passwords on firewalls and routers are changed to
       strong, unique passwords, or remote administrative access is switched off entirely.
     assessment: questionnaire
+    evidence:
+      - source: questionnaire
+        question: CE-FW-02-Q1
     crosswalk:
       iso27001-2022: [A.5.17, A.8.9]
       nist-csf-2.0: [PR.AA-01]
@@ -41,6 +46,8 @@ controls:
     evidence:
       - source: redscope
         check: portscan.risky_service_exposed
+      - source: questionnaire
+        question: CE-FW-03-Q1
     crosswalk:
       iso27001-2022: [A.8.20, A.8.5]
       nist-csf-2.0: [PR.IR-01, PR.AA-03]
@@ -66,6 +73,8 @@ controls:
         check: serviceenum.memcached_no_auth
       - source: redscope
         check: serviceenum.zookeeper_no_auth
+      - source: questionnaire
+        question: CE-FW-04-Q1
     crosswalk:
       iso27001-2022: [A.8.20]
       nist-csf-2.0: [PR.IR-01]
@@ -77,6 +86,9 @@ controls:
       An authorised person approves every inbound rule and records its business need.
       Rules that are no longer needed are removed or disabled promptly.
     assessment: questionnaire
+    evidence:
+      - source: questionnaire
+        question: CE-FW-05-Q1
     crosswalk:
       iso27001-2022: [A.8.20, A.8.32]
       nist-csf-2.0: [PR.PS-01]

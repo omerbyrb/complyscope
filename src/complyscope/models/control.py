@@ -44,6 +44,14 @@ _ALLOWED_SOURCES = {
 }
 
 
+class Question(StrictModel):
+    """A yes/no questionnaire item; "yes" means the requirement is met."""
+
+    id: ControlId
+    text: NonEmptyStr
+    allow_not_applicable: bool = False
+
+
 class Control(StrictModel):
     id: ControlId
     theme: NonEmptyStr
@@ -75,6 +83,7 @@ class Framework(StrictModel):
     source_url: NonEmptyStr
     themes: tuple[NonEmptyStr, ...] = Field(min_length=1)
     controls: tuple[Control, ...] = ()
+    questions: tuple[Question, ...] = ()
 
     @model_validator(mode="after")
     def _controls_are_consistent(self) -> "Framework":
@@ -85,7 +94,17 @@ class Framework(StrictModel):
             seen.add(control.id)
             if control.theme not in self.themes:
                 raise ValueError(f"control {control.id}: unknown theme '{control.theme}'")
+        question_ids = [question.id for question in self.questions]
+        if len(question_ids) != len(set(question_ids)):
+            raise ValueError("duplicate question id")
+        for control in self.controls:
+            for rule in control.evidence:
+                if isinstance(rule, QuestionnaireRule) and rule.question not in question_ids:
+                    raise ValueError(f"control {control.id}: unknown question '{rule.question}'")
         return self
+
+    def question(self, question_id: str) -> Question | None:
+        return next((q for q in self.questions if q.id == question_id), None)
 
     def get(self, control_id: str) -> Control:
         for control in self.controls:

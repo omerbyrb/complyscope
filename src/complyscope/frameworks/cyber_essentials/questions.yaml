@@ -1,0 +1,112 @@
+# Questionnaire for the parts of Cyber Essentials a scan cannot see. Each question is a
+# yes/no statement; "yes" means the requirement is met. Questions that allow
+# "not_applicable" need a justification note when answered that way.
+# Wording is complyscope's own summary of NCSC Requirements for IT Infrastructure v3.3.
+questions:
+  # Firewalls
+  - id: CE-FW-01-Q1
+    text: >-
+      Does every device have a firewall: a boundary firewall for devices on networks you
+      control, and a software firewall on devices used elsewhere, such as at home or on
+      public Wi-Fi?
+  - id: CE-FW-02-Q1
+    text: >-
+      Have the default administrator passwords on every firewall and router been replaced
+      with strong, unique passwords, or has remote administration been switched off?
+  - id: CE-FW-03-Q1
+    text: >-
+      Where a firewall or router admin interface can be reached from the internet, is there
+      a documented business need, and is it protected by MFA or by an IP allow list?
+    allow_not_applicable: true
+  - id: CE-FW-04-Q1
+    text: >-
+      Do your firewalls block all inbound connections by default, allowing only services you
+      have chosen to expose?
+  - id: CE-FW-05-Q1
+    text: >-
+      Is every inbound firewall rule approved by an authorised person, documented with its
+      business need, and removed when it is no longer needed?
+
+  # Secure configuration
+  - id: CE-SC-01-Q1
+    text: >-
+      Do you regularly remove or disable accounts that are not needed, such as guest accounts
+      and unused administrator accounts?
+  - id: CE-SC-02-Q1
+    text: Have all default and easily guessed passwords been changed on devices and software?
+  - id: CE-SC-03-Q1
+    text: >-
+      Do you remove or disable software, utilities and network services that a device does not
+      need for its role?
+  - id: CE-SC-04-Q1
+    text: Is auto-run disabled, so that files cannot run without the user's approval?
+  - id: CE-SC-05-Q1
+    text: Must users sign in before they can reach any organisational data or service?
+  - id: CE-SC-06-Q1
+    text: >-
+      Do devices need a biometric, password or PIN to unlock, with guessing limited (no more
+      than 10 attempts in 5 minutes, or locking after 10 failures), and is an unlock-only
+      password or PIN at least 6 characters?
+
+  # Security update management
+  - id: CE-SU-01-Q1
+    text: Is all software on in-scope devices licensed and still supported by its vendor?
+  - id: CE-SU-02-Q1
+    text: >-
+      Is software that is no longer supported removed, or isolated in a sub-set with no
+      internet access?
+  - id: CE-SU-03-Q1
+    text: Are automatic updates turned on wherever the software allows it?
+  - id: CE-SU-04-Q1
+    text: >-
+      Are critical and high-risk updates installed within 14 days of release (vendor-rated
+      critical or high, CVSS v3 7 or above, or with no severity given)?
+
+  # User access control
+  - id: CE-UA-01-Q1
+    text: Is there a process for creating and approving user accounts?
+  - id: CE-UA-02-Q1
+    text: Does everyone sign in with their own unique credentials, with no shared accounts?
+  - id: CE-UA-03-Q1
+    text: >-
+      Are accounts removed or disabled when people leave, or after a set period of
+      inactivity?
+  - id: CE-UA-04-Q1
+    text: Is MFA turned on for every service that supports it, and always for cloud services?
+  - id: CE-UA-05-Q1
+    text: >-
+      Do administrators use a separate account for administrative work only, never for email
+      or web browsing?
+  - id: CE-UA-06-Q1
+    text: >-
+      Are special access privileges removed promptly when they are no longer needed, for
+      example after a change of role?
+  - id: CE-UA-07-Q1
+    text: >-
+      Are password logins protected against guessing by MFA, by throttling (no more than 10
+      attempts in 5 minutes) or by locking after 10 failed attempts?
+  - id: CE-UA-08-Q1
+    text: >-
+      Is password quality enforced technically: MFA, or at least 12 characters, or at least
+      8 characters with automatic blocking of common passwords, with no maximum length?
+  - id: CE-UA-09-Q1
+    text: >-
+      Do you help staff choose and store unique passwords (guidance, a password manager),
+      avoid forced regular expiry and complexity rules, and change passwords promptly after a
+      suspected compromise?
+
+  # Malware protection
+  - id: CE-MP-01-Q1
+    text: >-
+      Does every in-scope device have active, up-to-date malware protection, through
+      anti-malware software or application allow listing?
+  - id: CE-MP-02-Q1
+    text: >-
+      Where anti-malware software is used, does it update as the vendor recommends, stop
+      malware and malicious code from running, and block connections to malicious websites?
+    allow_not_applicable: true
+  - id: CE-MP-03-Q1
+    text: >-
+      Where application allow listing is used, are applications approved before deployment,
+      is the approved list kept current, and are unsigned applications blocked?
+    allow_not_applicable: true

@@ -159,7 +159,7 @@ def test_score_of_nothing_is_zero():
 
 def test_clean_scan_of_the_real_catalogue_cannot_claim_compliance():
     ce = load_builtin_framework("cyber-essentials")
-    checks = {r.check for c in ce.controls for r in c.evidence}
+    checks = {r.check for c in ce.controls for r in c.evidence if r.source == "redscope"}
     items = [seen(check, HOSTS[0], "absent") for check in sorted(checks)]
 
     summary = score(evaluate(ce, collection(*items), HOSTS[:1]))

@@ -7,6 +7,9 @@ controls:
       Guest accounts, unused administrative accounts and other accounts that are not
       needed are regularly removed or disabled.
     assessment: questionnaire
+    evidence:
+      - source: questionnaire
+        question: CE-SC-01-Q1
     crosswalk:
       iso27001-2022: [A.5.18, A.8.9]
       nist-csf-2.0: [PR.AA-05]
@@ -18,6 +21,9 @@ controls:
       Any default or easily guessed account password is replaced in line with the
       password requirements of the user access control theme.
     assessment: questionnaire
+    evidence:
+      - source: questionnaire
+        question: CE-SC-02-Q1
     crosswalk:
       iso27001-2022: [A.5.17]
       nist-csf-2.0: [PR.AA-01]
@@ -47,6 +53,8 @@ controls:
         check: serviceenum.dns_open_recursion
       - source: redscope
         check: headers.info_disclosure
+      - source: questionnaire
+        question: CE-SC-03-Q1
     crosswalk:
       iso27001-2022: [A.8.9, A.8.19]
       nist-csf-2.0: [PR.PS-01]
@@ -58,6 +66,9 @@ controls:
       Features that execute files without the user's authorisation, for example when
       they are downloaded or inserted on removable media, are turned off.
     assessment: questionnaire
+    evidence:
+      - source: questionnaire
+        question: CE-SC-04-Q1
     crosswalk:
       iso27001-2022: [A.8.9]
       nist-csf-2.0: [PR.PS-05]
@@ -69,6 +80,9 @@ controls:
       No organisational data or service is available to a user who has not first
       proved their identity.
     assessment: questionnaire
+    evidence:
+      - source: questionnaire
+        question: CE-SC-05-Q1
     crosswalk:
       iso27001-2022: [A.8.5]
       nist-csf-2.0: [PR.AA-03]
@@ -83,6 +97,9 @@ controls:
       default where neither can be configured. A password or PIN used only to unlock a
       device is at least 6 characters long.
     assessment: questionnaire
+    evidence:
+      - source: questionnaire
+        question: CE-SC-06-Q1
     crosswalk:
       iso27001-2022: [A.8.1, A.8.5]
       nist-csf-2.0: [PR.AA-03]

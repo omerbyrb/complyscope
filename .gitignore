@@ -34,6 +34,9 @@ evidence*.json
 # Real risk registers describe an organisation's weaknesses
 /risks.yaml
 
+# Real questionnaire answers describe an organisation's practices
+/answers.yaml
+
 # OS / editors
 .DS_Store
 .idea/

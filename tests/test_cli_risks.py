@@ -18,7 +18,14 @@ EOL_ON_LOCALHOST = {("banner.eol_software", "localhost")}
 
 def evidence_items(failing=()):
     ce = load_builtin_framework("cyber-essentials")
-    checks = sorted({rule.check for control in ce.controls for rule in control.evidence})
+    checks = sorted(
+        {
+            rule.check
+            for control in ce.controls
+            for rule in control.evidence
+            if rule.source == "redscope"
+        }
+    )
     return [
         Evidence(
             source="redscope",
@@ -157,3 +164,31 @@ def test_evidence_checks_are_shared_with_assess(paths):
     assert result.exit_code == 2
     assert "Other Ltd" in result.stderr
     assert not register.exists()
+
+
+def test_a_no_answer_becomes_a_risk(paths):
+    evidence, register = paths
+    write_evidence(evidence)
+    answers = Path(__file__).resolve().parents[1] / "examples" / "answers.example.yaml"
+
+    result = CliRunner().invoke(
+        cli,
+        [
+            "risks",
+            "--scope",
+            str(EXAMPLE_SCOPE),
+            "--evidence",
+            str(evidence),
+            "--answers",
+            str(answers),
+            "--register",
+            str(register),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "Added: R-CE-FW-05, R-CE-UA-04" in result.stdout
+    (risk,) = [r for r in load_register(register).risks if r.id == "R-CE-UA-04"]
+    assert risk.evidence_summary == (
+        "CE-UA-04-Q1 answered no by Jane Doe (fictional) on 2026-11-15",
+    )

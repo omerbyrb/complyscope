@@ -5,6 +5,7 @@ Expected layout::
     <framework dir>/
         framework.yaml        # id, name, version, publisher, source_url, themes
         controls/*.yaml       # each file: {controls: [<control>, ...]}
+        questions.yaml        # optional: {questions: [<question>, ...]}
 """
 
 from pathlib import Path
@@ -13,7 +14,7 @@ from typing import Any
 import yaml
 from pydantic import ValidationError
 
-from complyscope.models import Control, Framework
+from complyscope.models import Control, Framework, Question
 
 
 class FrameworkLoadError(Exception):
@@ -46,8 +47,10 @@ def load_framework(path: Path) -> Framework:
             defined_in[control.id] = control_file
             controls.append(control)
 
+    questions = _load_questions(path / "questions.yaml")
+
     try:
-        return Framework.model_validate({**metadata, "controls": controls})
+        return Framework.model_validate({**metadata, "controls": controls, "questions": questions})
     except ValidationError as e:
         raise FrameworkLoadError(f"{path}: invalid framework: {e}") from e
 
@@ -67,6 +70,18 @@ def _load_control_file(control_file: Path) -> list[Control]:
         except ValidationError as e:
             raise FrameworkLoadError(f"{control_file}: control {control_id}: {e}") from e
     return controls
+
+
+def _load_questions(questions_file: Path) -> list[Question]:
+    if not questions_file.is_file():
+        return []
+    content = _read_yaml(questions_file)
+    if not isinstance(content, dict) or not isinstance(content.get("questions"), list):
+        raise FrameworkLoadError(f"{questions_file}: expected a top-level 'questions' list")
+    try:
+        return [Question.model_validate(entry) for entry in content["questions"]]
+    except ValidationError as e:
+        raise FrameworkLoadError(f"{questions_file}: invalid question: {e}") from e
 
 
 def _read_yaml(file: Path) -> Any:

@@ -1,0 +1,6 @@
+questions:
+  - id: MINI-SC-Q1
+    text: Are unnecessary services disabled?
+  - id: MINI-SC-Q2
+    text: Have default passwords been changed?
+    allow_not_applicable: true

@@ -76,14 +76,19 @@ describe real systems.
 ## Assessing controls
 
 ```bash
-complyscope assess --scope scope.yaml --evidence evidence.json
+cp examples/answers.example.yaml answers.yaml   # then answer for your organisation
+complyscope assess --scope scope.yaml --evidence evidence.json --answers answers.yaml
 ```
 
+Most of Cyber Essentials cannot be seen by a scan, so every control also has a yes/no
+question. `answers.yaml` records each answer, who gave it and when; `not_applicable` needs a
+written justification and is only allowed where the question permits it.
+
 `assess` sends no network traffic. It judges each control as `pass`, `fail`, `partial` or
-`not_assessed` and reports two separate figures: **compliance** (controls that pass) and
-**coverage** (controls that could be assessed at all). Until the questionnaire module
-exists, a clean scan cannot pass a Cyber Essentials control, and the figures are never a
-certification.
+`not_assessed`: a hybrid control passes only when the scan is clean **and** the answer is
+yes, and an unanswered question leaves its control not assessed. It reports two separate
+figures, **compliance** (controls that pass) and **coverage** (controls that could be
+assessed at all), and they are never a certification.
 
 ## Managing risks
 

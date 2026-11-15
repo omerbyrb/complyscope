@@ -87,6 +87,8 @@ When a control fails, complyscope drafts one risk for it:
   | low | 2 |
   | info | 1 |
 
+  A control that failed only because of a "no" in the questionnaire has no finding
+  severity, so its likelihood is drafted as **3 (Possible)** for the owner to review.
 - **Impact** cannot be measured by a scan, because it depends on what the system does for
   the business. It is drafted as **3 (Moderate)** and marked *unconfirmed*.
 - **Owner** is left empty, **treatment** defaults to *mitigate* and the **plan** is empty.

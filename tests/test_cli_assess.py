@@ -30,7 +30,14 @@ def seen(check, target, observed="absent"):
 def clean_evidence(overrides=()):
     """Every catalogue check, clean on every in-scope host, except (check, host) overrides."""
     ce = load_builtin_framework("cyber-essentials")
-    checks = sorted({rule.check for control in ce.controls for rule in control.evidence})
+    checks = sorted(
+        {
+            rule.check
+            for control in ce.controls
+            for rule in control.evidence
+            if rule.source == "redscope"
+        }
+    )
     return [
         seen(check, host, "present" if (check, host) in overrides else "absent")
         for check in checks

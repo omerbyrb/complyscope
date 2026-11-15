@@ -11,6 +11,8 @@ controls:
     evidence:
       - source: redscope
         check: banner.eol_software
+      - source: questionnaire
+        question: CE-SU-01-Q1
     crosswalk:
       iso27001-2022: [A.8.8]
       nist-csf-2.0: [PR.PS-02]
@@ -26,6 +28,8 @@ controls:
     evidence:
       - source: redscope
         check: banner.eol_software
+      - source: questionnaire
+        question: CE-SU-02-Q1
     crosswalk:
       iso27001-2022: [A.8.8]
       nist-csf-2.0: [PR.PS-02]
@@ -34,6 +38,9 @@ controls:
     theme: security_update_management
     title: Automatic updates are enabled where possible
     assessment: questionnaire
+    evidence:
+      - source: questionnaire
+        question: CE-SU-03-Q1
     crosswalk:
       iso27001-2022: [A.8.8]
       nist-csf-2.0: [PR.PS-02]
@@ -48,10 +55,12 @@ controls:
       fixes any such issue counts as critical.
     assessment: hybrid
     # A known CVE in a detected version suggests a missed update. The 14-day window itself
-    # needs patch records, which the questionnaire will ask for (week 5).
+    # needs patch records, which the question asks about.
     evidence:
       - source: redscope
         check: cvelookup.known_vulnerability
+      - source: questionnaire
+        question: CE-SU-04-Q1
     crosswalk:
       iso27001-2022: [A.8.8]
       nist-csf-2.0: [ID.RA-01, PR.PS-02]

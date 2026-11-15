@@ -5,6 +5,9 @@ controls:
     theme: user_access_control
     title: User accounts are created through an approval process
     assessment: questionnaire
+    evidence:
+      - source: questionnaire
+        question: CE-UA-01-Q1
     crosswalk:
       iso27001-2022: [A.5.16, A.5.18]
       nist-csf-2.0: [PR.AA-01]
@@ -16,6 +19,9 @@ controls:
       Each person has their own credentials and proves their identity before getting
       access to applications or devices. Shared accounts are not used.
     assessment: questionnaire
+    evidence:
+      - source: questionnaire
+        question: CE-UA-02-Q1
     crosswalk:
       iso27001-2022: [A.5.16, A.8.5]
       nist-csf-2.0: [PR.AA-01, PR.AA-03]
@@ -27,6 +33,9 @@ controls:
       Accounts are removed or disabled when a person leaves or after a defined period of
       inactivity.
     assessment: questionnaire
+    evidence:
+      - source: questionnaire
+        question: CE-UA-03-Q1
     crosswalk:
       iso27001-2022: [A.5.18]
       nist-csf-2.0: [PR.AA-05]
@@ -40,6 +49,9 @@ controls:
       authenticators count as MFA. The password element of MFA is at least 8
       characters with no maximum length.
     assessment: questionnaire
+    evidence:
+      - source: questionnaire
+        question: CE-UA-04-Q1
     crosswalk:
       iso27001-2022: [A.8.5]
       nist-csf-2.0: [PR.AA-03]
@@ -51,6 +63,9 @@ controls:
       Administrators use a separate account for administrative tasks only, never for
       email, web browsing or other everyday activity.
     assessment: questionnaire
+    evidence:
+      - source: questionnaire
+        question: CE-UA-05-Q1
     crosswalk:
       iso27001-2022: [A.8.2]
       nist-csf-2.0: [PR.AA-05]
@@ -61,6 +76,9 @@ controls:
     description: >-
       Elevated privileges are withdrawn promptly, for example when someone changes role.
     assessment: questionnaire
+    evidence:
+      - source: questionnaire
+        question: CE-UA-06-Q1
     crosswalk:
       iso27001-2022: [A.8.2, A.5.18]
       nist-csf-2.0: [PR.AA-05]
@@ -72,6 +90,9 @@ controls:
       At least one of: MFA; throttling that allows no more than 10 attempts in
       5 minutes; or locking after at most 10 failed attempts.
     assessment: questionnaire
+    evidence:
+      - source: questionnaire
+        question: CE-UA-07-Q1
     crosswalk:
       iso27001-2022: [A.8.5]
       nist-csf-2.0: [PR.AA-03]
@@ -84,6 +105,9 @@ controls:
       8 characters combined with automatic blocking of common passwords. No maximum
       length is imposed.
     assessment: questionnaire
+    evidence:
+      - source: questionnaire
+        question: CE-UA-08-Q1
     crosswalk:
       iso27001-2022: [A.5.17]
       nist-csf-2.0: [PR.AA-01]
@@ -97,6 +121,9 @@ controls:
       manager is provided. Regular forced expiry and complexity rules are not imposed.
       Passwords are changed promptly when compromise is known or suspected.
     assessment: questionnaire
+    evidence:
+      - source: questionnaire
+        question: CE-UA-09-Q1
     crosswalk:
       iso27001-2022: [A.5.17, A.6.3]
       nist-csf-2.0: [PR.AT-01]

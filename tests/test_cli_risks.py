@@ -18,7 +18,14 @@ EOL_ON_LOCALHOST = {("banner.eol_software", "localhost")}
 
 def evidence_items(failing=()):
     ce = load_builtin_framework("cyber-essentials")
-    checks = sorted({rule.check for control in ce.controls for rule in control.evidence})
+    checks = sorted(
+        {
+            rule.check
+            for control in ce.controls
+            for rule in control.evidence
+            if rule.source == "redscope"
+        }
+    )
     return [
         Evidence(
             source="redscope",

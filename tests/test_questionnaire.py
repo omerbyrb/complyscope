@@ -156,3 +156,17 @@ def test_invalid_answers_files_are_refused_with_the_file_name(ce, tmp_path, body
     with pytest.raises(AnswersError, match=message) as error:
         load_answers(write(tmp_path, body), ce)
     assert "answers.yaml" in str(error.value)
+
+
+@pytest.mark.parametrize(
+    "body, message",
+    [("- just a list\n", "'questions' list"), ("questions: [{id: Q1}]\n", "invalid question")],
+)
+def test_malformed_questions_file_is_refused(tmp_path, body, message):
+    import shutil
+
+    shutil.copytree(MINI, tmp_path / "mini")
+    (tmp_path / "mini" / "questions.yaml").write_text(body)
+
+    with pytest.raises(FrameworkLoadError, match=message):
+        load_framework(tmp_path / "mini")

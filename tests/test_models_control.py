@@ -30,6 +30,7 @@ def make_framework(controls):
             "source_url": "https://example.org",
             "themes": ["firewalls", "secure_configuration"],
             "controls": controls,
+            "questions": [{"id": "CE-SC-Q1", "text": "Are unneeded services off?"}],
         }
     )
 
@@ -101,3 +102,11 @@ def test_framework_get_returns_control_by_id():
     assert framework.get("CE-SC-01").title == "Unnecessary services are disabled"
     with pytest.raises(KeyError):
         framework.get("CE-XX-99")
+
+
+def test_framework_rejects_duplicate_question_ids():
+    data = make_framework([]).model_dump()
+    data["questions"] = [data["questions"][0], data["questions"][0]]
+
+    with pytest.raises(ValidationError, match="duplicate question id"):
+        Framework.model_validate(data)

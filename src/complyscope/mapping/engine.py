@@ -1,10 +1,12 @@
-"""Judge every control of a framework against collected evidence (see ADR-0012)."""
+"""Judge every control of a framework against collected evidence (see ADR-0012, ADR-0014)."""
 
 from collections import Counter
-from collections.abc import Iterable, Sequence
+from collections.abc import Sequence
 
 from complyscope.mapping.rules import rule_status
 from complyscope.models import (
+    Answer,
+    AnswerSheet,
     AssessmentMethod,
     ComplianceScore,
     Control,
@@ -13,14 +15,21 @@ from complyscope.models import (
     Evidence,
     EvidenceCollection,
     Framework,
+    QuestionnaireRule,
     RedscopeRule,
 )
 
 _EvidenceIndex = dict[tuple[str, str], list[Evidence]]
 
+# A "no" fails a questionnaire rule; "yes" and a justified "not_applicable" pass it.
+_ANSWER_OBSERVED = {"yes": "absent", "not_applicable": "absent", "no": "present"}
+
 
 def evaluate(
-    framework: Framework, collection: EvidenceCollection, hosts: Sequence[str]
+    framework: Framework,
+    collection: EvidenceCollection,
+    hosts: Sequence[str],
+    answers: AnswerSheet | None = None,
 ) -> tuple[ControlResult, ...]:
     """Return one result per control.
 
@@ -32,53 +41,64 @@ def evaluate(
     index: _EvidenceIndex = {}
     for item in collection.items:
         index.setdefault((item.check, item.target), []).append(item)
-    return tuple(_evaluate_control(control, index, hosts) for control in framework.controls)
+    sheet = answers or AnswerSheet(organisation="-", framework=framework.id)
+    return tuple(_evaluate_control(c, index, hosts, sheet) for c in framework.controls)
 
 
 def _evaluate_control(
-    control: Control, index: _EvidenceIndex, hosts: Sequence[str]
+    control: Control, index: _EvidenceIndex, hosts: Sequence[str], sheet: AnswerSheet
 ) -> ControlResult:
-    rules = [rule for rule in control.evidence if isinstance(rule, RedscopeRule)]
-    if not rules:
-        return _result(
-            control, ControlStatus.NOT_ASSESSED, "No technical checks; needs the questionnaire."
+    if not control.evidence:
+        return ControlResult(
+            control_id=control.id,
+            status=ControlStatus.NOT_ASSESSED,
+            rationale="No evidence rules are defined for this control.",
         )
 
-    outcomes: dict[tuple[str, str], str] = {}
+    # Each outcome is labelled the way it is reported: "check on host" or "question".
+    outcomes: dict[str, str] = {}
+    failures: dict[str, str] = {}
     evidence: list[Evidence] = []
-    for rule in rules:
-        for host in hosts:
-            items = index.get((rule.check, host), [])
-            evidence.extend(items)
-            observed = items[0].observed if items else None
-            outcomes[(rule.check, host)] = rule_status(rule.fail_if, observed)
+    used_answers: list[Answer] = []
+    for rule in control.evidence:
+        if isinstance(rule, RedscopeRule):
+            for host in hosts:
+                items = index.get((rule.check, host), [])
+                evidence.extend(items)
+                label = f"{rule.check} on {host}"
+                observed = items[0].observed if items else None
+                outcomes[label] = rule_status(rule.fail_if, observed)
+                failures[label] = label
+        elif isinstance(rule, QuestionnaireRule):
+            answer = sheet.get(rule.question)
+            if answer:
+                used_answers.append(answer)
+            observed = _ANSWER_OBSERVED[answer.answer] if answer else None
+            outcomes[rule.question] = rule_status("present", observed)
+            failures[rule.question] = f"{rule.question} answered no"
 
-    failed = sorted(f"{check} on {host}" for (check, host), s in outcomes.items() if s == "fail")
+    failed = sorted(failures[label] for label, s in outcomes.items() if s == "fail")
     missing = sum(status == "not_assessed" for status in outcomes.values())
+    has_questions = any(isinstance(rule, QuestionnaireRule) for rule in control.evidence)
 
     if failed:
         status, rationale = ControlStatus.FAIL, "Failed: " + ", ".join(failed)
     elif missing == len(outcomes):
-        status, rationale = ControlStatus.NOT_ASSESSED, "No evidence was collected for its checks."
+        status, rationale = ControlStatus.NOT_ASSESSED, "No evidence or answers were collected."
     elif missing:
         status = ControlStatus.PARTIAL
-        rationale = f"{missing} of {len(outcomes)} check results have no evidence."
-    elif control.assessment is AssessmentMethod.HYBRID:
+        rationale = f"{missing} of {len(outcomes)} results have no evidence or answer."
+    elif control.assessment is AssessmentMethod.HYBRID and not has_questions:
         status = ControlStatus.PARTIAL
-        rationale = "Technical checks are clean; the questionnaire part is not assessed yet."
+        rationale = "Technical checks are clean; the control has no questionnaire part yet."
     else:
-        status, rationale = ControlStatus.PASS, "All technical checks are clean on every host."
-    return _result(control, status, rationale, evidence)
-
-
-def _result(
-    control: Control,
-    status: ControlStatus,
-    rationale: str,
-    evidence: Iterable[Evidence] = (),
-) -> ControlResult:
+        status, rationale = ControlStatus.PASS, "All evidence and answers meet the requirement."
     return ControlResult(
-        control_id=control.id, status=status, rationale=rationale, evidence=tuple(evidence)
+        control_id=control.id,
+        status=status,
+        rationale=rationale,
+        evidence=tuple(evidence),
+        answers=tuple(used_answers),
     )
 
 

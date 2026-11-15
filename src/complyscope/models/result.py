@@ -4,6 +4,7 @@ from enum import StrEnum
 
 from complyscope.models.base import NonEmptyStr, StrictModel
 from complyscope.models.evidence import Evidence
+from complyscope.models.questionnaire import Answer
 
 
 class ControlStatus(StrEnum):
@@ -18,6 +19,7 @@ class ControlResult(StrictModel):
     status: ControlStatus
     rationale: NonEmptyStr
     evidence: tuple[Evidence, ...] = ()
+    answers: tuple[Answer, ...] = ()
 
 
 class ComplianceScore(StrictModel):

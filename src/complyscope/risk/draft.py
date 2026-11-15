@@ -8,7 +8,7 @@ from complyscope.models.risk import LIKELIHOOD_FROM_SEVERITY, REVIEW_DAYS, risk_
 
 # A scan cannot measure business impact; the owner must confirm it.
 DRAFT_IMPACT = 3
-# Only used if a failed control somehow carries no present finding.
+# Used when a control failed on questionnaire answers alone (no finding severity).
 DEFAULT_LIKELIHOOD = 3
 
 
@@ -37,6 +37,11 @@ def draft_risks(
                 review_by=today + timedelta(days=REVIEW_DAYS[level]),
                 evidence_summary=tuple(
                     sorted({f"{e.check} on {e.target} ({e.severity.value})" for e in present})
+                )
+                + tuple(
+                    f"{a.question} answered no by {a.answered_by} on {a.answered_on.isoformat()}"
+                    for a in result.answers
+                    if a.answer == "no"
                 ),
             )
         )

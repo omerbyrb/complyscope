@@ -1,24 +1,24 @@
 """Command-line entry point for complyscope."""
 
+import ipaddress
 from datetime import UTC, date, datetime
 from pathlib import Path
 
 import click
-from pydantic import ValidationError
 
 from complyscope import __version__
+from complyscope.assessment import AssessmentInputError, load_assessment
 from complyscope.collectors import redscope_adapter
 from complyscope.controls import FrameworkLoadError, load_builtin_framework
-from complyscope.mapping.engine import evaluate, score
+from complyscope.mapping.engine import score
 from complyscope.models import (
-    AnswerSheet,
     ControlResult,
     ControlStatus,
     EvidenceCollection,
     Framework,
     Scope,
 )
-from complyscope.questionnaire import AnswersError, load_answers
+from complyscope.questionnaire import render_template
 from complyscope.risk import ACCEPTABLE_LEVELS, draft_risks
 from complyscope.risk.register import (
     RegisterError,
@@ -81,6 +81,78 @@ def list_controls(framework: str, theme: str | None) -> None:
     ]
     click.echo(f"{catalogue.name} v{catalogue.version}: {len(rows)} controls\n")
     _echo_table(("ID", "THEME", "ASSESSMENT", "TITLE"), rows)
+
+
+@cli.group()
+def questions() -> None:
+    """Questionnaire for the parts of a framework a scan cannot see."""
+
+
+def _framework_or_usage_error(framework: str) -> Framework:
+    try:
+        return load_builtin_framework(framework)
+    except FrameworkLoadError as e:
+        raise click.BadParameter(str(e), param_hint="--framework") from e
+
+
+@questions.command("list")
+@click.option("--framework", "-f", default="cyber-essentials", show_default=True)
+@click.option("--theme", "-t", default=None, help="Only questions for controls in this theme.")
+def list_questions(framework: str, theme: str | None) -> None:
+    """List the questions and the control each one belongs to."""
+    catalogue = _framework_or_usage_error(framework)
+    if theme is not None and theme not in catalogue.themes:
+        raise click.BadParameter(
+            f"unknown theme '{theme}' (available: {', '.join(catalogue.themes)})",
+            param_hint="--theme",
+        )
+    entries = [
+        (control, catalogue.question(rule.question))
+        for control in catalogue.controls
+        if theme is None or control.theme == theme
+        for rule in control.evidence
+        if rule.source == "questionnaire"
+    ]
+    click.echo(f"{catalogue.name} v{catalogue.version}: {len(entries)} questions")
+    for control, question in entries:
+        allowed = "  [not_applicable allowed]" if question.allow_not_applicable else ""
+        click.echo(f"\n{question.id}  ({control.id}){allowed}\n    {question.text}")
+
+
+@questions.command("template")
+@click.option(
+    "--scope",
+    "scope_path",
+    type=click.Path(path_type=Path),
+    default="scope.yaml",
+    show_default=True,
+    help="Scope file naming the organisation.",
+)
+@click.option(
+    "--output",
+    "-o",
+    type=click.Path(path_type=Path, dir_okay=False),
+    default="answers.yaml",
+    show_default=True,
+)
+@click.option("--framework", "-f", default="cyber-essentials", show_default=True)
+@click.option("--force", is_flag=True, help="Overwrite the output file if it exists.")
+def questions_template(scope_path: Path, output: Path, framework: str, force: bool) -> None:
+    """Write a blank answers file for the organisation to fill in."""
+    try:
+        scope = load_scope(scope_path)
+    except ScopeError as e:
+        raise click.BadParameter(str(e), param_hint="--scope") from e
+    catalogue = _framework_or_usage_error(framework)
+    if output.exists() and not force:
+        raise click.BadParameter(
+            f"{output} already exists; use --force to overwrite it", param_hint="--output"
+        )
+    output.write_text(render_template(catalogue, scope.organisation), encoding="utf-8")
+    click.echo(
+        f"Wrote {len(catalogue.questions)} questions to {output}. "
+        f"Answer them, then run: complyscope assess --answers {output}"
+    )
 
 
 @cli.command()
@@ -310,60 +382,98 @@ def risks(
     click.echo(f"\n{above} open risk(s) above the risk appetite (high or critical).")
 
 
+@cli.command()
+@click.option(
+    "--scope",
+    "scope_path",
+    type=click.Path(path_type=Path),
+    default="scope.yaml",
+    show_default=True,
+)
+@click.option(
+    "--evidence",
+    "evidence_path",
+    type=click.Path(path_type=Path),
+    default="evidence.json",
+    show_default=True,
+)
+@click.option(
+    "--answers",
+    "answers_path",
+    type=click.Path(path_type=Path),
+    default="answers.yaml",
+    show_default=True,
+)
+@click.option(
+    "--register",
+    "register_path",
+    type=click.Path(path_type=Path),
+    default="risks.yaml",
+    show_default=True,
+)
+@click.option("--framework", "-f", default="cyber-essentials", show_default=True)
+@click.option("--host", default="127.0.0.1", show_default=True, help="Address to listen on.")
+@click.option("--port", default=8000, show_default=True, type=int)
+@click.option(
+    "--allow-remote",
+    is_flag=True,
+    help="Allow listening on a non-loopback address. The API has no authentication.",
+)
+def serve(
+    scope_path: Path,
+    evidence_path: Path,
+    answers_path: Path,
+    register_path: Path,
+    framework: str,
+    host: str,
+    port: int,
+    allow_remote: bool,
+) -> None:
+    """Serve the read-only API for the dashboard."""
+    if not _is_loopback(host) and not allow_remote:
+        raise click.BadParameter(
+            f"{host} is reachable from other machines and the API has no authentication; "
+            "pass --allow-remote if you really want this",
+            param_hint="--host",
+        )
+    try:
+        import uvicorn
+
+        from complyscope.api import create_app
+    except ImportError as e:
+        raise click.ClickException(
+            "the API needs extra packages. Install them with: pip install 'complyscope[web]'"
+        ) from e
+    app = create_app(
+        scope_path=scope_path,
+        evidence_path=evidence_path,
+        answers_path=answers_path,
+        register_path=register_path,
+        framework=framework,
+    )
+    click.echo(f"Serving complyscope API on http://{host}:{port}/api (read-only)")
+    uvicorn.run(app, host=host, port=port)
+
+
+def _is_loopback(host: str) -> bool:
+    if host == "localhost":
+        return True
+    try:
+        return ipaddress.ip_address(host).is_loopback
+    except ValueError:
+        return False
+
+
 def _load_assessment(
     scope_path: Path, evidence_path: Path, framework: str, answers_path: Path
 ) -> tuple[Scope, Framework, tuple[ControlResult, ...]]:
-    """Load scope, framework, evidence and answers, check they belong together, evaluate."""
     try:
-        scope = load_scope(scope_path)
-    except ScopeError as e:
-        raise click.BadParameter(str(e), param_hint="--scope") from e
-    try:
-        catalogue = load_builtin_framework(framework)
-    except FrameworkLoadError as e:
-        raise click.BadParameter(str(e), param_hint="--framework") from e
-    collection = _load_evidence(evidence_path)
-
-    # Evidence from another engagement must not be judged against this scope.
-    if collection.organisation != scope.organisation:
-        raise click.BadParameter(
-            f"{evidence_path} belongs to {collection.organisation!r}, "
-            f"but the scope is for {scope.organisation!r}",
-            param_hint="--evidence",
-        )
-    outside = sorted({item.target for item in collection.items} - set(scope.hosts))
-    if outside:
-        raise click.BadParameter(
-            f"{evidence_path} has evidence for hosts outside the scope: {', '.join(outside)}",
-            param_hint="--evidence",
-        )
-    answers = _load_answers(answers_path, catalogue, scope)
-    return scope, catalogue, evaluate(catalogue, collection, scope.hosts, answers)
-
-
-def _load_answers(path: Path, catalogue: Framework, scope: Scope) -> AnswerSheet | None:
-    try:
-        answers = load_answers(path, catalogue)
-    except AnswersError as e:
-        raise click.BadParameter(str(e), param_hint="--answers") from e
-    if answers is None:
-        click.echo(f"No answers file ({path}): questionnaire parts are not assessed.\n")
-    elif answers.organisation != scope.organisation:
-        raise click.BadParameter(
-            f"{path} belongs to {answers.organisation!r}, "
-            f"but the scope is for {scope.organisation!r}",
-            param_hint="--answers",
-        )
-    return answers
-
-
-def _load_evidence(path: Path) -> EvidenceCollection:
-    if not path.is_file():
-        raise click.BadParameter(f"{path}: file not found", param_hint="--evidence")
-    try:
-        return EvidenceCollection.from_json(path.read_text(encoding="utf-8"))
-    except ValidationError as e:
-        raise click.BadParameter(f"{path}: invalid evidence: {e}", param_hint="--evidence") from e
+        assessment = load_assessment(scope_path, evidence_path, framework, answers_path)
+    except AssessmentInputError as e:
+        raise click.BadParameter(str(e), param_hint=f"--{e.source}") from e
+    if assessment.answers is None:
+        click.echo(f"No answers file ({answers_path}): questionnaire parts are not assessed.\n")
+    return assessment.scope, assessment.framework, assessment.results
 
 
 def _echo_table(header: tuple[str, ...], rows: list[tuple[str, ...]]) -> None:

@@ -33,9 +33,15 @@ dependencies = [
 scan = [
     "redscope @ git+https://github.com/omerbyrb/redscope@v2.0.0",
 ]
+# Read-only API and dashboard (complyscope serve).
+web = [
+    "fastapi>=0.115",
+    "uvicorn>=0.30",
+]
 dev = [
     "pytest>=8.0",
     "pytest-cov>=5.0",
+    "httpx>=0.27",
     "ruff==0.17.1",
 ]
 

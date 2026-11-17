@@ -149,7 +149,7 @@ HEADER = "organisation: Acme Ltd (fictional)\nframework: cyber-essentials\n"
         ("organisation: Acme\nframework: iso27001-2022\nanswers: []\n", "iso27001-2022"),
         ("answers: !!python/object/apply:os.system ['echo pwned']\n", "invalid YAML"),
         ("- a list\n", "expected a mapping"),
-        (HEADER + "answers: [{question: CE-UA-04-Q1}]\n", "invalid answers"),
+        (HEADER + "answers: [{question: CE-UA-04-Q1, answer: 'yes'}]\n", "invalid answers"),
     ],
 )
 def test_invalid_answers_files_are_refused_with_the_file_name(ce, tmp_path, body, message):

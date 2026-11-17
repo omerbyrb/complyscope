@@ -1,5 +1,6 @@
 """Command-line entry point for complyscope."""
 
+import ipaddress
 from datetime import UTC, date, datetime
 from pathlib import Path
 
@@ -379,6 +380,88 @@ def risks(
             click.echo(f"{risk_id}: {', '.join(reasons)}")
     above = sum(r.level not in ACCEPTABLE_LEVELS for r in open_risks)
     click.echo(f"\n{above} open risk(s) above the risk appetite (high or critical).")
+
+
+@cli.command()
+@click.option(
+    "--scope",
+    "scope_path",
+    type=click.Path(path_type=Path),
+    default="scope.yaml",
+    show_default=True,
+)
+@click.option(
+    "--evidence",
+    "evidence_path",
+    type=click.Path(path_type=Path),
+    default="evidence.json",
+    show_default=True,
+)
+@click.option(
+    "--answers",
+    "answers_path",
+    type=click.Path(path_type=Path),
+    default="answers.yaml",
+    show_default=True,
+)
+@click.option(
+    "--register",
+    "register_path",
+    type=click.Path(path_type=Path),
+    default="risks.yaml",
+    show_default=True,
+)
+@click.option("--framework", "-f", default="cyber-essentials", show_default=True)
+@click.option("--host", default="127.0.0.1", show_default=True, help="Address to listen on.")
+@click.option("--port", default=8000, show_default=True, type=int)
+@click.option(
+    "--allow-remote",
+    is_flag=True,
+    help="Allow listening on a non-loopback address. The API has no authentication.",
+)
+def serve(
+    scope_path: Path,
+    evidence_path: Path,
+    answers_path: Path,
+    register_path: Path,
+    framework: str,
+    host: str,
+    port: int,
+    allow_remote: bool,
+) -> None:
+    """Serve the read-only API for the dashboard."""
+    if not _is_loopback(host) and not allow_remote:
+        raise click.BadParameter(
+            f"{host} is reachable from other machines and the API has no authentication; "
+            "pass --allow-remote if you really want this",
+            param_hint="--host",
+        )
+    try:
+        import uvicorn
+
+        from complyscope.api import create_app
+    except ImportError as e:
+        raise click.ClickException(
+            "the API needs extra packages. Install them with: pip install 'complyscope[web]'"
+        ) from e
+    app = create_app(
+        scope_path=scope_path,
+        evidence_path=evidence_path,
+        answers_path=answers_path,
+        register_path=register_path,
+        framework=framework,
+    )
+    click.echo(f"Serving complyscope API on http://{host}:{port}/api (read-only)")
+    uvicorn.run(app, host=host, port=port)
+
+
+def _is_loopback(host: str) -> bool:
+    if host == "localhost":
+        return True
+    try:
+        return ipaddress.ip_address(host).is_loopback
+    except ValueError:
+        return False
 
 
 def _load_assessment(

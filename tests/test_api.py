@@ -189,3 +189,20 @@ def test_serve_refuses_a_public_address_without_explicit_consent(captured_run):
     allowed = CliRunner().invoke(cli, ["serve", "--host", "0.0.0.0", "--allow-remote"])
     assert allowed.exit_code == 0, allowed.output
     assert captured_run == [{"host": "0.0.0.0", "port": 8000}]
+
+
+def test_serve_treats_localhost_as_local_and_other_names_as_remote(captured_run):
+    assert CliRunner().invoke(cli, ["serve", "--host", "localhost"]).exit_code == 0
+    assert CliRunner().invoke(cli, ["serve", "--host", "laptop.example.test"]).exit_code == 2
+    assert [call["host"] for call in captured_run] == ["localhost"]
+
+
+def test_serve_explains_how_to_install_the_web_extra(monkeypatch):
+    import sys
+
+    monkeypatch.setitem(sys.modules, "uvicorn", None)
+
+    result = CliRunner().invoke(cli, ["serve"])
+
+    assert result.exit_code == 1
+    assert "complyscope[web]" in result.stderr

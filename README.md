@@ -76,7 +76,7 @@ describe real systems.
 ## Assessing controls
 
 ```bash
-cp examples/answers.example.yaml answers.yaml   # then answer for your organisation
+complyscope questions template --scope scope.yaml --output answers.yaml   # then answer it
 complyscope assess --scope scope.yaml --evidence evidence.json --answers answers.yaml
 ```
 
@@ -102,6 +102,18 @@ estimates likelihood from the evidence but leaves impact, owner, treatment and p
 person, and lists what each risk still needs. Edit `risks.yaml` freely: running the command
 again refreshes only likelihood and evidence, adds new risks, reopens closed risks that fail
 again, and points out risks whose controls no longer fail so their owner can close them.
+
+## API
+
+```bash
+pip install -e ".[web]"
+complyscope serve --scope scope.yaml --evidence evidence.json --answers answers.yaml --register risks.yaml
+```
+
+A read-only JSON API on `http://127.0.0.1:8000/api` (`/health`, `/assessment`,
+`/controls/{id}`, `/risks`), with interactive docs at `/docs`. It listens only on this
+machine unless `--allow-remote` is given, because it has no authentication
+([ADR-0015](docs/decisions/0015-read-only-local-api.md)).
 
 ## Roadmap
 

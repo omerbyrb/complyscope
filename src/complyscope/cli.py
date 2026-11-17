@@ -4,21 +4,20 @@ from datetime import UTC, date, datetime
 from pathlib import Path
 
 import click
-from pydantic import ValidationError
 
 from complyscope import __version__
+from complyscope.assessment import AssessmentInputError, load_assessment
 from complyscope.collectors import redscope_adapter
 from complyscope.controls import FrameworkLoadError, load_builtin_framework
-from complyscope.mapping.engine import evaluate, score
+from complyscope.mapping.engine import score
 from complyscope.models import (
-    AnswerSheet,
     ControlResult,
     ControlStatus,
     EvidenceCollection,
     Framework,
     Scope,
 )
-from complyscope.questionnaire import AnswersError, load_answers, render_template
+from complyscope.questionnaire import render_template
 from complyscope.risk import ACCEPTABLE_LEVELS, draft_risks
 from complyscope.risk.register import (
     RegisterError,
@@ -385,57 +384,13 @@ def risks(
 def _load_assessment(
     scope_path: Path, evidence_path: Path, framework: str, answers_path: Path
 ) -> tuple[Scope, Framework, tuple[ControlResult, ...]]:
-    """Load scope, framework, evidence and answers, check they belong together, evaluate."""
     try:
-        scope = load_scope(scope_path)
-    except ScopeError as e:
-        raise click.BadParameter(str(e), param_hint="--scope") from e
-    try:
-        catalogue = load_builtin_framework(framework)
-    except FrameworkLoadError as e:
-        raise click.BadParameter(str(e), param_hint="--framework") from e
-    collection = _load_evidence(evidence_path)
-
-    # Evidence from another engagement must not be judged against this scope.
-    if collection.organisation != scope.organisation:
-        raise click.BadParameter(
-            f"{evidence_path} belongs to {collection.organisation!r}, "
-            f"but the scope is for {scope.organisation!r}",
-            param_hint="--evidence",
-        )
-    outside = sorted({item.target for item in collection.items} - set(scope.hosts))
-    if outside:
-        raise click.BadParameter(
-            f"{evidence_path} has evidence for hosts outside the scope: {', '.join(outside)}",
-            param_hint="--evidence",
-        )
-    answers = _load_answers(answers_path, catalogue, scope)
-    return scope, catalogue, evaluate(catalogue, collection, scope.hosts, answers)
-
-
-def _load_answers(path: Path, catalogue: Framework, scope: Scope) -> AnswerSheet | None:
-    try:
-        answers = load_answers(path, catalogue)
-    except AnswersError as e:
-        raise click.BadParameter(str(e), param_hint="--answers") from e
-    if answers is None:
-        click.echo(f"No answers file ({path}): questionnaire parts are not assessed.\n")
-    elif answers.organisation != scope.organisation:
-        raise click.BadParameter(
-            f"{path} belongs to {answers.organisation!r}, "
-            f"but the scope is for {scope.organisation!r}",
-            param_hint="--answers",
-        )
-    return answers
-
-
-def _load_evidence(path: Path) -> EvidenceCollection:
-    if not path.is_file():
-        raise click.BadParameter(f"{path}: file not found", param_hint="--evidence")
-    try:
-        return EvidenceCollection.from_json(path.read_text(encoding="utf-8"))
-    except ValidationError as e:
-        raise click.BadParameter(f"{path}: invalid evidence: {e}", param_hint="--evidence") from e
+        assessment = load_assessment(scope_path, evidence_path, framework, answers_path)
+    except AssessmentInputError as e:
+        raise click.BadParameter(str(e), param_hint=f"--{e.source}") from e
+    if assessment.answers is None:
+        click.echo(f"No answers file ({answers_path}): questionnaire parts are not assessed.\n")
+    return assessment.scope, assessment.framework, assessment.results
 
 
 def _echo_table(header: tuple[str, ...], rows: list[tuple[str, ...]]) -> None:

@@ -18,7 +18,7 @@ from complyscope.models import (
     Framework,
     Scope,
 )
-from complyscope.questionnaire import AnswersError, load_answers
+from complyscope.questionnaire import AnswersError, load_answers, render_template
 from complyscope.risk import ACCEPTABLE_LEVELS, draft_risks
 from complyscope.risk.register import (
     RegisterError,
@@ -81,6 +81,78 @@ def list_controls(framework: str, theme: str | None) -> None:
     ]
     click.echo(f"{catalogue.name} v{catalogue.version}: {len(rows)} controls\n")
     _echo_table(("ID", "THEME", "ASSESSMENT", "TITLE"), rows)
+
+
+@cli.group()
+def questions() -> None:
+    """Questionnaire for the parts of a framework a scan cannot see."""
+
+
+def _framework_or_usage_error(framework: str) -> Framework:
+    try:
+        return load_builtin_framework(framework)
+    except FrameworkLoadError as e:
+        raise click.BadParameter(str(e), param_hint="--framework") from e
+
+
+@questions.command("list")
+@click.option("--framework", "-f", default="cyber-essentials", show_default=True)
+@click.option("--theme", "-t", default=None, help="Only questions for controls in this theme.")
+def list_questions(framework: str, theme: str | None) -> None:
+    """List the questions and the control each one belongs to."""
+    catalogue = _framework_or_usage_error(framework)
+    if theme is not None and theme not in catalogue.themes:
+        raise click.BadParameter(
+            f"unknown theme '{theme}' (available: {', '.join(catalogue.themes)})",
+            param_hint="--theme",
+        )
+    entries = [
+        (control, catalogue.question(rule.question))
+        for control in catalogue.controls
+        if theme is None or control.theme == theme
+        for rule in control.evidence
+        if rule.source == "questionnaire"
+    ]
+    click.echo(f"{catalogue.name} v{catalogue.version}: {len(entries)} questions")
+    for control, question in entries:
+        allowed = "  [not_applicable allowed]" if question.allow_not_applicable else ""
+        click.echo(f"\n{question.id}  ({control.id}){allowed}\n    {question.text}")
+
+
+@questions.command("template")
+@click.option(
+    "--scope",
+    "scope_path",
+    type=click.Path(path_type=Path),
+    default="scope.yaml",
+    show_default=True,
+    help="Scope file naming the organisation.",
+)
+@click.option(
+    "--output",
+    "-o",
+    type=click.Path(path_type=Path, dir_okay=False),
+    default="answers.yaml",
+    show_default=True,
+)
+@click.option("--framework", "-f", default="cyber-essentials", show_default=True)
+@click.option("--force", is_flag=True, help="Overwrite the output file if it exists.")
+def questions_template(scope_path: Path, output: Path, framework: str, force: bool) -> None:
+    """Write a blank answers file for the organisation to fill in."""
+    try:
+        scope = load_scope(scope_path)
+    except ScopeError as e:
+        raise click.BadParameter(str(e), param_hint="--scope") from e
+    catalogue = _framework_or_usage_error(framework)
+    if output.exists() and not force:
+        raise click.BadParameter(
+            f"{output} already exists; use --force to overwrite it", param_hint="--output"
+        )
+    output.write_text(render_template(catalogue, scope.organisation), encoding="utf-8")
+    click.echo(
+        f"Wrote {len(catalogue.questions)} questions to {output}. "
+        f"Answer them, then run: complyscope assess --answers {output}"
+    )
 
 
 @cli.command()

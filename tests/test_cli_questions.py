@@ -108,3 +108,10 @@ def test_template_needs_a_valid_scope(tmp_path):
 
     assert result.exit_code == 2
     assert "not found" in result.stderr
+
+
+def test_unknown_framework_is_a_usage_error():
+    result = run("questions", "list", "--framework", "pci-dss")
+
+    assert result.exit_code == 2
+    assert "unknown framework" in result.stderr

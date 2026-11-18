@@ -439,17 +439,20 @@ def serve(
     try:
         import uvicorn
 
-        from complyscope.api import create_app
+        from complyscope.api import LOCAL_HOSTS, create_app
     except ImportError as e:
         raise click.ClickException(
             "the API needs extra packages. Install them with: pip install 'complyscope[web]'"
         ) from e
+    remote = not _is_loopback(host)
     app = create_app(
         scope_path=scope_path,
         evidence_path=evidence_path,
         answers_path=answers_path,
         register_path=register_path,
         framework=framework,
+        # Locally, only Host headers naming this machine are accepted (DNS rebinding).
+        allowed_hosts=None if remote else LOCAL_HOSTS,
     )
     click.echo(f"Serving complyscope API on http://{host}:{port}/api (read-only)")
     uvicorn.run(app, host=host, port=port)

@@ -1,14 +1,36 @@
 """FastAPI application: GET endpoints only, files re-read on every request."""
 
+from collections.abc import Callable, Collection
+from datetime import date
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi.responses import PlainTextResponse
 
 from complyscope import __version__
 from complyscope.assessment import Assessment, AssessmentInputError, load_assessment
 from complyscope.mapping.engine import score
+from complyscope.models import RiskStatus
 from complyscope.risk.register import RegisterError, load_register
+
+# Host header values a browser sends when the page was opened on this machine. Anything
+# else may be a DNS rebinding attack: a web page whose domain now points at 127.0.0.1
+# reading the API through the visitor's browser (ADR-0016).
+LOCAL_HOSTS = frozenset({"localhost", "127.0.0.1", "::1"})
+
+COMMON_HEADERS = {
+    "X-Content-Type-Options": "nosniff",
+    "Referrer-Policy": "no-referrer",
+}
+
+
+def host_name(header: str) -> str:
+    """The host part of a Host header: 'localhost:8000' -> 'localhost', '[::1]:80' -> '::1'."""
+    header = header.strip().lower()
+    if header.startswith("["):
+        return header[1 : header.find("]")]
+    return header.rsplit(":", 1)[0] if header.count(":") == 1 else header
 
 
 def create_app(
@@ -18,12 +40,27 @@ def create_app(
     answers_path: Path,
     register_path: Path,
     framework: str = "cyber-essentials",
+    allowed_hosts: Collection[str] | None = LOCAL_HOSTS,
+    today: Callable[[], date] = date.today,
 ) -> FastAPI:
+    """Build the API. ``allowed_hosts=None`` accepts any Host header (remote serving only)."""
     app = FastAPI(
         title="complyscope",
         version=__version__,
         description="Read-only view of a complyscope assessment and risk register.",
     )
+
+    @app.middleware("http")
+    async def protect(request: Request, call_next: Callable) -> Response:
+        if allowed_hosts is not None:
+            if host_name(request.headers.get("host", "")) not in allowed_hosts:
+                return PlainTextResponse("Invalid host header", status_code=400)
+        response = await call_next(request)
+        response.headers.update(COMMON_HEADERS)
+        if request.url.path.startswith("/api/"):
+            # Assessment data describes security weaknesses; keep it out of browser caches.
+            response.headers["Cache-Control"] = "no-store"
+        return response
 
     def assessment() -> Assessment:
         # Files are read per request so the API always shows the latest collect/assess run.
@@ -94,6 +131,7 @@ def create_app(
                     "score": risk.score,
                     "level": risk.level.value,
                     "needs_attention": risk.needs_attention(),
+                    "review_overdue": risk.status is RiskStatus.OPEN and risk.review_by < today(),
                 }
                 for risk in risks
             ],

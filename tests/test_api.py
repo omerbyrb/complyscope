@@ -72,14 +72,14 @@ def files(tmp_path):
     return {"evidence": evidence, "register": register, "tmp": tmp_path}
 
 
-def client(files, **overrides):
+def client(files, base_url="http://127.0.0.1:8000", **overrides):
     paths = {
         "scope_path": SCOPE,
         "evidence_path": files["evidence"],
         "answers_path": ANSWERS,
         "register_path": files["register"],
     } | overrides
-    return TestClient(create_app(**paths))
+    return TestClient(create_app(**paths), base_url=base_url)
 
 
 def test_health_reports_the_version(files):
@@ -125,6 +125,14 @@ def test_risks_include_score_level_and_what_they_need(files):
     assert risk["needs_attention"] == ["no risk owner", "impact not confirmed", "no treatment plan"]
 
 
+def test_risks_flag_an_overdue_review(files):
+    today = date(2026, 12, 18)
+
+    (risk,) = client(files, today=lambda: today).get("/api/risks").json()["risks"]
+
+    assert risk["review_overdue"] is True
+
+
 def test_missing_register_means_no_risks(files):
     response = client(files, register_path=files["tmp"] / "none.yaml").get("/api/risks")
 
@@ -160,15 +168,65 @@ def test_api_picks_up_changed_files_without_restart(files):
     assert api.get("/api/controls/CE-SU-01").json()["status"] == "pass"
 
 
+# --- browser-facing protections (ADR-0016) ---------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "base_url", ["http://127.0.0.1:8000", "http://localhost:8000", "http://[::1]:8000"]
+)
+def test_local_host_names_are_accepted(files, base_url):
+    assert client(files, base_url=base_url).get("/api/health").status_code == 200
+
+
+@pytest.mark.parametrize(
+    "base_url", ["http://attacker.example", "http://127.0.0.1.attacker.example"]
+)
+def test_other_host_names_are_refused_against_dns_rebinding(files, base_url):
+    response = client(files, base_url=base_url).get("/api/assessment")
+
+    assert response.status_code == 400
+    assert ORG not in response.text
+
+
+def test_any_host_is_accepted_when_explicitly_allowed(files):
+    api = client(files, base_url="http://laptop.example.test", allowed_hosts=None)
+
+    assert api.get("/api/health").status_code == 200
+
+
+def test_api_responses_are_not_cached(files):
+    response = client(files).get("/api/assessment")
+
+    assert response.headers["cache-control"] == "no-store"
+    assert response.headers["x-content-type-options"] == "nosniff"
+    assert response.headers["referrer-policy"] == "no-referrer"
+
+
+def test_interactive_docs_still_work(files):
+    assert client(files).get("/docs").status_code == 200
+
+
 # --- complyscope serve ------------------------------------------------------------------
+
+
+class Captured(list):
+    """uvicorn.run keyword arguments, plus the apps it was given."""
+
+    def __init__(self):
+        super().__init__()
+        self.apps = []
+
+    def __call__(self, app, **kwargs):
+        self.apps.append(app)
+        self.append(kwargs)
 
 
 @pytest.fixture
 def captured_run(monkeypatch):
     import uvicorn
 
-    calls = []
-    monkeypatch.setattr(uvicorn, "run", lambda app, **kwargs: calls.append(kwargs))
+    calls = Captured()
+    monkeypatch.setattr(uvicorn, "run", calls)
     return calls
 
 
@@ -206,3 +264,17 @@ def test_serve_explains_how_to_install_the_web_extra(monkeypatch):
 
     assert result.exit_code == 1
     assert "complyscope[web]" in result.stderr
+
+
+def test_served_app_refuses_foreign_host_names_unless_remote(captured_run):
+    CliRunner().invoke(cli, ["serve"])
+    CliRunner().invoke(cli, ["serve", "--host", "0.0.0.0", "--allow-remote"])
+    local, remote = captured_run.apps
+
+    assert (
+        TestClient(local, base_url="http://attacker.example").get("/api/health").status_code == 400
+    )
+    assert (
+        TestClient(remote, base_url="http://laptop.example.test").get("/api/health").status_code
+        == 200
+    )

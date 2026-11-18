@@ -103,17 +103,23 @@ person, and lists what each risk still needs. Edit `risks.yaml` freely: running 
 again refreshes only likelihood and evidence, adds new risks, reopens closed risks that fail
 again, and points out risks whose controls no longer fail so their owner can close them.
 
-## API
+## Dashboard and API
 
 ```bash
 pip install -e ".[web]"
 complyscope serve --scope scope.yaml --evidence evidence.json --answers answers.yaml --register risks.yaml
 ```
 
-A read-only JSON API on `http://127.0.0.1:8000/api` (`/health`, `/assessment`,
-`/controls/{id}`, `/risks`), with interactive docs at `/docs`. It listens only on this
-machine unless `--allow-remote` is given, because it has no authentication
-([ADR-0015](docs/decisions/0015-read-only-local-api.md)).
+Open `http://127.0.0.1:8000/` for the dashboard: compliance and coverage, every control
+with its status (click an ID for the evidence and answers behind it), and the open risks
+with what each one still needs. Edit `answers.yaml` or `risks.yaml` and press Refresh.
+
+The same data is a read-only JSON API under `/api` (`/health`, `/assessment`,
+`/controls/{id}`, `/risks`), with interactive docs at `/docs`. Because there is no
+authentication, it listens only on this machine unless `--allow-remote` is given, and it
+refuses requests whose Host header is not this machine, which blocks DNS rebinding
+([ADR-0015](docs/decisions/0015-read-only-local-api.md),
+[ADR-0016](docs/decisions/0016-dashboard-without-a-build-step.md)).
 
 ## Roadmap
 

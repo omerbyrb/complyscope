@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>complyscope</title>
+  <link rel="stylesheet" href="/static/dashboard.css">
+  <script src="/static/dashboard.js" defer></script>
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-row">
+      <div>
+        <p class="brand">complyscope</p>
+        <h1 id="organisation">Loading assessment…</h1>
+        <p class="muted" id="framework"></p>
+      </div>
+      <div class="refresh">
+        <button type="button" id="refresh">Refresh</button>
+        <p class="muted small" id="updated" aria-live="polite"></p>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div id="error" class="error" role="alert" hidden></div>
+
+    <section aria-labelledby="summary-title">
+      <h2 id="summary-title" class="visually-hidden">Summary</h2>
+      <div class="tiles" id="tiles"></div>
+      <div class="statusbar" id="statusbar" aria-hidden="true"></div>
+      <ul class="legend" id="legend"></ul>
+    </section>
+
+    <section aria-labelledby="controls-title">
+      <div class="section-head">
+        <h2 id="controls-title">Controls</h2>
+        <div class="filters" id="filters" role="group" aria-label="Filter controls by status"></div>
+      </div>
+      <div class="table-scroll">
+        <table class="controls">
+          <thead>
+            <tr><th scope="col">ID</th><th scope="col">Control</th><th scope="col">Theme</th><th scope="col">Assessed by</th><th scope="col">Status</th></tr>
+          </thead>
+          <tbody id="controls"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section aria-labelledby="risks-title">
+      <div class="section-head">
+        <h2 id="risks-title">Open risks</h2>
+        <p class="muted small">Scored likelihood × impact (5 × 5), highest first.</p>
+      </div>
+      <div class="table-scroll">
+        <table class="risks">
+          <thead>
+            <tr><th scope="col">Risk</th><th scope="col">Controls</th><th scope="col">L × I</th><th scope="col">Level</th><th scope="col">Owner</th><th scope="col">Review by</th><th scope="col">Still needs</th></tr>
+          </thead>
+          <tbody id="risks"></tbody>
+        </table>
+      </div>
+      <p class="muted small" id="risks-note"></p>
+    </section>
+  </main>
+
+  <footer class="wrap muted small">
+    Self-assessment built from collected evidence and questionnaire answers:
+    not a certification. Edit answers.yaml or risks.yaml, then press Refresh.
+  </footer>
+</body>
+</html>

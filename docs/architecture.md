@@ -47,7 +47,7 @@ against that evidence, record what fails as a **risk**, and report the result.
 | `src/complyscope/risk/` | Risk scoring and register |
 | `src/complyscope/reporting/` | HTML/PDF report rendering |
 | `src/complyscope/ai/` | LLM-assisted policy gap analysis with cited rationale |
-| `src/complyscope/api/` | FastAPI service for the dashboard |
+| `src/complyscope/api/` | Read-only FastAPI service; `static/` holds the dashboard (plain HTML, CSS, JS) |
 | `src/complyscope/frameworks/` | Control catalogues as YAML data, shipped in the package ([ADR-0006](decisions/0006-ship-catalogues-inside-the-package.md)) |
 | `examples/` | Fictional organisation data and sample reports |
 | `docs/decisions/` | Architecture Decision Records |

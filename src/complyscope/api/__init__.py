@@ -1,5 +1,8 @@
-"""Read-only HTTP API over an assessment (see ADR-0015). Needs ``complyscope[web]``."""
+"""Read-only HTTP API and dashboard over an assessment (ADR-0015, ADR-0016).
 
-from complyscope.api.app import create_app
+Needs ``complyscope[web]``.
+"""
 
-__all__ = ["create_app"]
+from complyscope.api.app import LOCAL_HOSTS, create_app
+
+__all__ = ["LOCAL_HOSTS", "create_app"]

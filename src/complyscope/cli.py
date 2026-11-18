@@ -429,7 +429,7 @@ def serve(
     port: int,
     allow_remote: bool,
 ) -> None:
-    """Serve the read-only API for the dashboard."""
+    """Serve the dashboard and its read-only API on this machine."""
     if not _is_loopback(host) and not allow_remote:
         raise click.BadParameter(
             f"{host} is reachable from other machines and the API has no authentication; "
@@ -439,19 +439,23 @@ def serve(
     try:
         import uvicorn
 
-        from complyscope.api import create_app
+        from complyscope.api import LOCAL_HOSTS, create_app
     except ImportError as e:
         raise click.ClickException(
             "the API needs extra packages. Install them with: pip install 'complyscope[web]'"
         ) from e
+    remote = not _is_loopback(host)
     app = create_app(
         scope_path=scope_path,
         evidence_path=evidence_path,
         answers_path=answers_path,
         register_path=register_path,
         framework=framework,
+        # Locally, only Host headers naming this machine are accepted (DNS rebinding).
+        allowed_hosts=None if remote else LOCAL_HOSTS,
     )
-    click.echo(f"Serving complyscope API on http://{host}:{port}/api (read-only)")
+    shown = f"[{host}]" if ":" in host else host
+    click.echo(f"complyscope dashboard: http://{shown}:{port}/  (read-only API under /api)")
     uvicorn.run(app, host=host, port=port)
 
 

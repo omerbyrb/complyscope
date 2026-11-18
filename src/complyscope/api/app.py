@@ -6,7 +6,8 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, HTTPException, Request, Response
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import FileResponse, PlainTextResponse
+from fastapi.staticfiles import StaticFiles
 
 from complyscope import __version__
 from complyscope.assessment import Assessment, AssessmentInputError, load_assessment
@@ -18,6 +19,16 @@ from complyscope.risk.register import RegisterError, load_register
 # else may be a DNS rebinding attack: a web page whose domain now points at 127.0.0.1
 # reading the API through the visitor's browser (ADR-0016).
 LOCAL_HOSTS = frozenset({"localhost", "127.0.0.1", "::1"})
+
+STATIC_DIR = Path(__file__).parent / "static"
+
+# The dashboard loads only its own files; data from the API is never treated as markup.
+DASHBOARD_CSP = (
+    "default-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; "
+    "form-action 'none'; frame-ancestors 'none'"
+)
+# FastAPI's interactive docs load Swagger UI from a CDN, so they keep their own policy.
+DOCS_PATHS = frozenset({"/docs", "/docs/oauth2-redirect", "/redoc"})
 
 COMMON_HEADERS = {
     "X-Content-Type-Options": "nosniff",
@@ -57,10 +68,20 @@ def create_app(
                 return PlainTextResponse("Invalid host header", status_code=400)
         response = await call_next(request)
         response.headers.update(COMMON_HEADERS)
-        if request.url.path.startswith("/api/"):
+        path = request.url.path
+        if path.startswith("/api/"):
             # Assessment data describes security weaknesses; keep it out of browser caches.
             response.headers["Cache-Control"] = "no-store"
+        if path not in DOCS_PATHS:
+            response.headers["Content-Security-Policy"] = DASHBOARD_CSP
+            response.headers["X-Frame-Options"] = "DENY"
         return response
+
+    app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+    @app.get("/", include_in_schema=False)
+    def dashboard() -> FileResponse:
+        return FileResponse(STATIC_DIR / "index.html")
 
     def assessment() -> Assessment:
         # Files are read per request so the API always shows the latest collect/assess run.

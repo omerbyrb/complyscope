@@ -71,6 +71,7 @@ function showError(error) {
     el("span", { text: error.message }),
   );
   box.hidden = false;
+  if (!state.assessment) $("organisation").textContent = "No assessment loaded";
 }
 
 // --- summary ---------------------------------------------------------------------------
